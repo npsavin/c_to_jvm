@@ -2,7 +2,7 @@ public class Tokenizer implements TokenizerInterface {
     private enum State {
         READY,
         INTEGER,
-        IDENTIFIER,
+        WORD,
     }
 
     private State state;
@@ -16,6 +16,9 @@ public class Tokenizer implements TokenizerInterface {
 
     private Token openBracket = new Token( Token.Type.OPEN_BRACKET );
     private Token closeBracket = new Token( Token.Type.CLOSE_BRACKET );
+
+    private Token openBrace = new Token( Token.Type.OPEN_BRACE );
+    private Token closeBrace = new Token( Token.Type.CLOSE_BRACE );
 
     private Token assign = new Token( Token.Type.ASSIGN );
 
@@ -85,6 +88,14 @@ public class Tokenizer implements TokenizerInterface {
                             return closeBracket;
                         }
 
+                        case ( '{' ) : {
+                            return openBrace;
+                        }
+
+                        case ( '}' ) : {
+                            return closeBrace;
+                        }
+
                         case ( ';' ) : {
                             return semicolon;
                         }
@@ -100,7 +111,7 @@ public class Tokenizer implements TokenizerInterface {
 
                     // complex tokens
                     if ( Character.isLetter( current ) ) {
-                        state = State.IDENTIFIER;
+                        state = State.WORD;
                         value = new StringBuilder( ).append( current );
                         continue;
                     } else if ( Character.isDigit( current ) ) {
@@ -126,7 +137,7 @@ public class Tokenizer implements TokenizerInterface {
                     break;
                 }
 
-                case IDENTIFIER: {
+                case WORD: {
                     char current = buffer.peekChar();
 
                     if ( Character.isLetter( current ) ) {

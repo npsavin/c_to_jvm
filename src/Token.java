@@ -15,6 +15,9 @@ public class Token {
         OPEN_BRACKET,
         CLOSE_BRACKET,
 
+        OPEN_BRACE,
+        CLOSE_BRACE,
+
         RETURN,
 
         END_OF_PROGRAM
