@@ -12,11 +12,11 @@ public class TokenizerTest {
         try {
             Assert.assertEquals( Token.Type.IDENTIFIER, tokenzer.getToken().getType() );
             Assert.assertEquals( Token.Type.ASSIGN, tokenzer.getToken().getType() );
-            Assert.assertEquals( Token.Type.INTEGER, tokenzer.getToken().getType() );
+            Assert.assertEquals( Token.Type.INTEGER_TYPE, tokenzer.getToken().getType() );
             Assert.assertEquals( Token.Type.SEMICOLON, tokenzer.getToken().getType() );
             Assert.assertEquals( Token.Type.IDENTIFIER, tokenzer.getToken().getType() );
             Assert.assertEquals( Token.Type.ASSIGN, tokenzer.getToken().getType() );
-            Assert.assertEquals( Token.Type.INTEGER, tokenzer.getToken().getType() );
+            Assert.assertEquals( Token.Type.INTEGER_TYPE, tokenzer.getToken().getType() );
             Assert.assertEquals( Token.Type.SEMICOLON, tokenzer.getToken().getType() );
             Assert.assertEquals( Token.Type.END_OF_PROGRAM, tokenzer.getToken().getType() );
 

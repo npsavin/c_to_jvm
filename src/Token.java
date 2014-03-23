@@ -8,7 +8,13 @@ public class Token {
         EQUALS,
 
         IDENTIFIER,
-        INTEGER,
+
+        INTEGER_TYPE,
+        DOUBLE_TYPE,
+        VOID_TYPE,
+
+        INTEGER_VALUE,
+        DOUBLE_VALUE,
 
         SEMICOLON,
 

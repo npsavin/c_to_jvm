@@ -1,8 +1,15 @@
-import java.io.StringReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 
 public class Main {
     public static void main( String[] args ) {
-        BufferInterface buffer = new Buffer( new StringReader( "a = 775; /*comment\n \n * ** 31e1\n 127 == */ \n basket = 9798;" ), 10 );
+        BufferInterface buffer = null;
+        try {
+            buffer = new Buffer( new FileReader( new File( "./resources/testProgram.c" ) ), 10 );
+        } catch ( FileNotFoundException e ) {
+            e.printStackTrace();
+        }
 
         TokenizerInterface tokenzer = new Tokenizer( buffer );
         try {

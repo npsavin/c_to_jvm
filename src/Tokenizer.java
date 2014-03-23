@@ -1,8 +1,12 @@
+import java.util.HashMap;
+import java.util.Map;
+
 public class Tokenizer implements TokenizerInterface {
     private enum State {
         READY,
         INTEGER,
-        WORD,
+        DOUBLE,
+        WORD
     }
 
     private State state;
@@ -26,19 +30,32 @@ public class Tokenizer implements TokenizerInterface {
 
     private Token semicolon = new Token( Token.Type.SEMICOLON );
 
+    private Token integerType = new Token( Token.Type.INTEGER_TYPE );
+    private Token doubleType = new Token( Token.Type.DOUBLE_TYPE );
+    private Token voidType = new Token( Token.Type.VOID_TYPE );
+
     private Token returnValue = new Token( Token.Type.RETURN );
 
     private Token endOfProgram = new Token( Token.Type.END_OF_PROGRAM );
 
+    private StringBuilder value = new StringBuilder();
+
+    private Map<String, Token> keywords = new HashMap<String, Token>();
+
     public Tokenizer( BufferInterface buffer ) {
         this.buffer = buffer;
+
+        keywords.put( "return", returnValue );
+        keywords.put( "int", integerType );
+        keywords.put( "double", doubleType );
+        keywords.put( "void", voidType );
     }
 
     @Override
     public Token getToken() throws IllegalCharacterException {
         state = State.READY;
 
-        StringBuilder value = null;
+        value.setLength( 0 );
 
         while ( true ) {
 
@@ -112,11 +129,11 @@ public class Tokenizer implements TokenizerInterface {
                     // complex tokens
                     if ( Character.isLetter( current ) ) {
                         state = State.WORD;
-                        value = new StringBuilder( ).append( current );
+                        value.append( current );
                         continue;
                     } else if ( Character.isDigit( current ) ) {
                         state = State.INTEGER;
-                        value = new StringBuilder( ).append( current );
+                        value.append( current );
                         continue;
                     } else if ( Character.isWhitespace( current ) ) {
                         continue;
@@ -131,8 +148,24 @@ public class Tokenizer implements TokenizerInterface {
                     if ( Character.isDigit( current ) ) {
                         buffer.getChar();
                         value.append( current );
+                    } else if ( current == '.' ) {
+                        buffer.getChar();
+                        value.append( current );
+                        state = State.DOUBLE;
                     } else {
-                        return new Token( Token.Type.INTEGER, value.toString() );
+                        return new Token( Token.Type.INTEGER_VALUE, value.toString() );
+                    }
+                    break;
+                }
+
+                case DOUBLE: {
+                    char current = buffer.peekChar();
+
+                    if ( Character.isDigit( current ) ) {
+                        buffer.getChar();
+                        value.append( current );
+                    } else {
+                        return new Token( Token.Type.DOUBLE_VALUE, value.toString() );
                     }
                     break;
                 }
@@ -144,7 +177,13 @@ public class Tokenizer implements TokenizerInterface {
                         buffer.getChar();
                         value.append( current );
                     } else {
-                        return new Token( Token.Type.IDENTIFIER, value.toString() );
+                        String result = value.toString();
+
+                        if ( keywords.containsKey( result ) ) {
+                            return keywords.get( result );
+                        } else {
+                            return new Token( Token.Type.IDENTIFIER, value.toString() );
+                        }
                     }
                     break;
                 }
