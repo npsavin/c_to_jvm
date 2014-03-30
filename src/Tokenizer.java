@@ -13,42 +13,46 @@ public class Tokenizer implements TokenizerInterface {
 
     private BufferInterface buffer;
 
-    private Token plus = new Token( Token.Type.PLUS );
-    private Token minus = new Token( Token.Type.MINUS );
-    private Token multiply = new Token( Token.Type.MULTIPLY );
-    private Token divide = new Token( Token.Type.DIVIDE );
+    private Map<Token.Type, Token> readyTokens = new HashMap<>();
 
-    private Token openBracket = new Token( Token.Type.OPEN_BRACKET );
-    private Token closeBracket = new Token( Token.Type.CLOSE_BRACKET );
+    {
+        readyTokens.put(Token.Type.PLUS, new Token( Token.Type.PLUS ) );
+        readyTokens.put(Token.Type.MINUS, new Token( Token.Type.MINUS ) );
+        readyTokens.put(Token.Type.MULTIPLY, new Token( Token.Type.MULTIPLY ) );
+        readyTokens.put(Token.Type.DIVIDE, new Token( Token.Type.DIVIDE ) );
 
-    private Token openBrace = new Token( Token.Type.OPEN_BRACE );
-    private Token closeBrace = new Token( Token.Type.CLOSE_BRACE );
+        readyTokens.put( Token.Type.OPEN_BRACKET, new Token( Token.Type.OPEN_BRACKET ) );
+        readyTokens.put( Token.Type.CLOSE_BRACKET, new Token( Token.Type.CLOSE_BRACKET ) );
 
-    private Token assign = new Token( Token.Type.ASSIGN );
+        readyTokens.put( Token.Type.OPEN_BRACE, new Token( Token.Type.OPEN_BRACE ) );
+        readyTokens.put( Token.Type.CLOSE_BRACE, new Token( Token.Type.CLOSE_BRACE ) );
 
-    private Token equals = new Token( Token.Type.EQUALS );
+        readyTokens.put( Token.Type.ASSIGN, new Token( Token.Type.ASSIGN ) );
 
-    private Token semicolon = new Token( Token.Type.SEMICOLON );
+        readyTokens.put( Token.Type.EQUALS, new Token( Token.Type.EQUALS ) );
 
-    private Token integerType = new Token( Token.Type.INTEGER_TYPE );
-    private Token doubleType = new Token( Token.Type.DOUBLE_TYPE );
-    private Token voidType = new Token( Token.Type.VOID_TYPE );
+        readyTokens.put( Token.Type.SEMICOLON, new Token( Token.Type.SEMICOLON ) );
 
-    private Token returnValue = new Token( Token.Type.RETURN );
+        readyTokens.put( Token.Type.INTEGER_TYPE, new Token( Token.Type.INTEGER_TYPE ) );
+        readyTokens.put( Token.Type.DOUBLE_TYPE, new Token( Token.Type.DOUBLE_TYPE ) );
+        readyTokens.put( Token.Type.VOID_TYPE, new Token( Token.Type.VOID_TYPE ) );
 
-    private Token endOfProgram = new Token( Token.Type.END_OF_PROGRAM );
+        readyTokens.put( Token.Type.RETURN, new Token( Token.Type.RETURN ) );
+
+        readyTokens.put( Token.Type.END_OF_PROGRAM, new Token( Token.Type.END_OF_PROGRAM ) );
+    }
 
     private StringBuilder value = new StringBuilder();
 
-    private Map<String, Token> keywords = new HashMap<String, Token>();
+    private Map<String, Token.Type> keywords = new HashMap<>();
 
     public Tokenizer( BufferInterface buffer ) {
         this.buffer = buffer;
 
-        keywords.put( "return", returnValue );
-        keywords.put( "int", integerType );
-        keywords.put( "double", doubleType );
-        keywords.put( "void", voidType );
+        keywords.put( "return", Token.Type.RETURN );
+        keywords.put( "int", Token.Type.INTEGER_TYPE );
+        keywords.put( "double", Token.Type.DOUBLE_TYPE );
+        keywords.put( "void", Token.Type.VOID_TYPE );
     }
 
     @Override
@@ -66,19 +70,19 @@ public class Tokenizer implements TokenizerInterface {
                     // simple tokens
                     switch ( current ) {
                         case ( '\u0000' ) : {
-                            return endOfProgram;
+                            return readyTokens.get( Token.Type.END_OF_PROGRAM );
                         }
 
                         case ( '+' ) : {
-                            return plus;
+                            return readyTokens.get( Token.Type.PLUS );
                         }
 
                         case ( '-' ) : {
-                            return minus;
+                            return readyTokens.get( Token.Type.MINUS );
                         }
 
                         case ( '*' ) : {
-                            return multiply;
+                            return readyTokens.get( Token.Type.MULTIPLY );
                         }
 
                         case ( '/' ) : {
@@ -93,36 +97,36 @@ public class Tokenizer implements TokenizerInterface {
                                 skipMultiLineComment();
                                 continue;
                             } else {
-                                return divide;
+                                return readyTokens.get( Token.Type.DIVIDE );
                             }
                         }
 
                         case ( '(' ) : {
-                            return openBracket;
+                            return readyTokens.get( Token.Type.OPEN_BRACKET );
                         }
 
                         case ( ')' ) : {
-                            return closeBracket;
+                            return readyTokens.get( Token.Type.CLOSE_BRACKET );
                         }
 
                         case ( '{' ) : {
-                            return openBrace;
+                            return readyTokens.get( Token.Type.OPEN_BRACE );
                         }
 
                         case ( '}' ) : {
-                            return closeBrace;
+                            return readyTokens.get( Token.Type.CLOSE_BRACE );
                         }
 
                         case ( ';' ) : {
-                            return semicolon;
+                            return readyTokens.get( Token.Type.SEMICOLON );
                         }
 
                         case ( '=' ) : {
                             if ( buffer.peekNextChar() == '=' ) {
                                 buffer.getChar();
-                                return equals;
+                                return readyTokens.get( Token.Type.EQUALS );
                             }
-                            return assign;
+                            return readyTokens.get( Token.Type.ASSIGN );
                         }
                     }
 
@@ -180,7 +184,7 @@ public class Tokenizer implements TokenizerInterface {
                         String result = value.toString();
 
                         if ( keywords.containsKey( result ) ) {
-                            return keywords.get( result );
+                            return readyTokens.get( keywords.get( result ) );
                         } else {
                             return new Token( Token.Type.IDENTIFIER, value.toString() );
                         }

@@ -6,24 +6,22 @@ public class Main {
     public static void main( String[] args ) {
         BufferInterface buffer = null;
         try {
-            buffer = new Buffer( new FileReader( new File( "./resources/testProgram.c" ) ), 10 );
+            buffer = new Buffer( new FileReader( new File( "./resources/testExpression.c" ) ), 10 );
         } catch ( FileNotFoundException e ) {
             e.printStackTrace();
         }
 
         TokenizerInterface tokenzer = new Tokenizer( buffer );
-        try {
-            while ( true ) {
-                Token token = tokenzer.getToken();
+        Parser parser = new Parser( tokenzer );
 
-                System.out.println( token.toString() );
+//        try {
+//            parser.getToken();
+//        } catch ( IllegalCharacterException e ) {
+//            e.printStackTrace();
+//        }
 
-                if (token.getType() == Token.Type.END_OF_PROGRAM) {
-                    break;
-                }
-            }
-        } catch ( IllegalCharacterException e ) {
-            System.err.println( e.getMessage() );
-        }
+        Node result = parser.parse();
+        String resultString = result.toTreeString( 0 );
+        System.out.println(resultString);
     }
 }
