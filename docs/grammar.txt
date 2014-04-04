@@ -1,0 +1,15 @@
+program > method program | method
+method > type name (varList) {body}
+type > double | int | void
+varList > notEmptyVarList | EMPTY
+notEmptyVarList > type name | type name, notEmptyVarList
+body > command; | command; body
+command > name = expr | RETURN expr | type name | name(paramList)
+
+expr > term +- term +- term ...
+term > factor */ factor */ factor ...
+factor > power^factor | power
+power > atom | -atom
+atom > name | number | (expr) | name(paramList)
+paramList > notEmptyParamList | EMPTY
+notEmptyParamList > expr | expr, notEmptyParamList

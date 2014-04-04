@@ -4,6 +4,8 @@ public class Token {
         MINUS,
         MULTIPLY,
         DIVIDE,
+        POWER,
+
         ASSIGN,
         EQUALS,
 
@@ -16,6 +18,7 @@ public class Token {
         INTEGER_VALUE,
         DOUBLE_VALUE,
 
+        COMMA,
         SEMICOLON,
 
         OPEN_BRACKET,
@@ -50,6 +53,10 @@ public class Token {
         return value;
     }
 
+    public boolean hasType( Type type ) {
+        return this.type.equals( type );
+    }
+
     @Override
     public boolean equals( Object o ) {
         if ( this == o ) return true;
@@ -72,6 +79,10 @@ public class Token {
 
     @Override
     public String toString() {
+        if ( value == null ) {
+            return type.toString();
+        }
+
         return "Token{" +
                 "type=" + type +
                 ", value='" + value + '\'' +

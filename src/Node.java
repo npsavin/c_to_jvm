@@ -3,12 +3,26 @@ import java.util.List;
 import java.util.Stack;
 
 public class Node {
-    private List<Node> children = new ArrayList<>();
+    public enum Type {
+        VALUE,
+        OPERATION,
+        LIST,
+        BODY,
+        PROGRAM
+    }
+
+    protected List<Node> children = new ArrayList<>();
     private Node parent = null;
+
+    private Type type = Type.VALUE;
 
     private Token value = null;
 
     private int childIndex = 0;
+
+    public Node( Type type ) {
+        this.type = type;
+    }
 
     public Node( Node parent ) {
         this.parent = parent;
@@ -74,21 +88,36 @@ public class Node {
     public String toTreeString( int depth ) {
         StringBuilder result = new StringBuilder();
 
-        result.append( value.toString() ).append( "\n" );
+        if (type != Type.VALUE) {
+            result.append( type.toString() ).append( "\n" );
+        } else {
+            if ( value != null ) {
+                result.append( value.toString() ).append( "\n" );
+            } else {
+                result.append( "null\n" );
+            }
+        }
 
-        if ( left() != null ) {
+        children.forEach( child -> {
             for ( int i = 0; i <= depth; i++ ) {
                 result.append( "\t" );
             }
-            result.append( "0: " ).append( left().toTreeString( depth + 1 ) );
-        }
+            result.append( child.toTreeString( depth + 1 ) );
+        } );
 
-        if ( right() != null ) {
-            for ( int i = 0; i <= depth; i++ ) {
-                result.append( "\t" );
-            }
-            result.append( "1: " ).append( right().toTreeString( depth + 1 ) );
-        }
+//        if ( left() != null ) {
+//            for ( int i = 0; i <= depth; i++ ) {
+//                result.append( "\t" );
+//            }
+//            result.append( "0: " ).append( left().toTreeString( depth + 1 ) );
+//        }
+//
+//        if ( right() != null ) {
+//            for ( int i = 0; i <= depth; i++ ) {
+//                result.append( "\t" );
+//            }
+//            result.append( "1: " ).append( right().toTreeString( depth + 1 ) );
+//        }
 
         return result.toString();
     }
@@ -140,5 +169,13 @@ public class Node {
         }
 
         return result.toString();
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public void setType( Type type ) {
+        this.type = type;
     }
 }

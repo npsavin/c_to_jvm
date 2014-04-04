@@ -9,8 +9,6 @@ public class Tokenizer implements TokenizerInterface {
         WORD
     }
 
-    private State state;
-
     private BufferInterface buffer;
 
     private Map<Token.Type, Token> readyTokens = new HashMap<>();
@@ -20,6 +18,7 @@ public class Tokenizer implements TokenizerInterface {
         readyTokens.put(Token.Type.MINUS, new Token( Token.Type.MINUS ) );
         readyTokens.put(Token.Type.MULTIPLY, new Token( Token.Type.MULTIPLY ) );
         readyTokens.put(Token.Type.DIVIDE, new Token( Token.Type.DIVIDE ) );
+        readyTokens.put(Token.Type.POWER, new Token( Token.Type.POWER ) );
 
         readyTokens.put( Token.Type.OPEN_BRACKET, new Token( Token.Type.OPEN_BRACKET ) );
         readyTokens.put( Token.Type.CLOSE_BRACKET, new Token( Token.Type.CLOSE_BRACKET ) );
@@ -57,7 +56,7 @@ public class Tokenizer implements TokenizerInterface {
 
     @Override
     public Token getToken() throws IllegalCharacterException {
-        state = State.READY;
+        State state = State.READY;
 
         value.setLength( 0 );
 
@@ -83,6 +82,10 @@ public class Tokenizer implements TokenizerInterface {
 
                         case ( '*' ) : {
                             return readyTokens.get( Token.Type.MULTIPLY );
+                        }
+
+                        case ( '^' ) : {
+                            return readyTokens.get( Token.Type.POWER );
                         }
 
                         case ( '/' ) : {
@@ -115,6 +118,10 @@ public class Tokenizer implements TokenizerInterface {
 
                         case ( '}' ) : {
                             return readyTokens.get( Token.Type.CLOSE_BRACE );
+                        }
+
+                        case ( ',' ) : {
+                            return readyTokens.get( Token.Type.COMMA );
                         }
 
                         case ( ';' ) : {
@@ -196,7 +203,8 @@ public class Tokenizer implements TokenizerInterface {
     }
 
     private void skipOneLineComment() {
-        while ( buffer.getChar() != '\n' ) {
+        while ( true ) {
+            if ( buffer.getChar() == '\n' ) break;
         }
     }
 

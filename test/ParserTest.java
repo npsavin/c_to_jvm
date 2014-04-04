@@ -28,7 +28,11 @@ public class ParserTest {
         buffer = new Buffer( new StringReader( string ), 10 );
 
         TokenizerInterface tokenzer = new Tokenizer( buffer );
-        parser = new Parser( tokenzer );
+        try {
+            parser = new Parser( tokenzer );
+        } catch ( ParsingErrorException e ) {
+            e.printStackTrace();
+        }
     }
 
     @Test
