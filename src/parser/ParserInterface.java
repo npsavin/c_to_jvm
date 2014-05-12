@@ -1,3 +1,5 @@
+package parser;
+
 public interface ParserInterface {
     public Node parseProgram() throws ParsingErrorException;
     public Node parseMethod() throws ParsingErrorException;

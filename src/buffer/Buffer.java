@@ -1,6 +1,7 @@
+package buffer;
+
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Arrays;
 
 public class Buffer implements BufferInterface {
     private Reader reader;

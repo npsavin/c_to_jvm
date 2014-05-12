@@ -1,39 +1,55 @@
+package parser;
+
+import tokenizer.Token;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
 public class Node {
-    public enum Type {
+    public enum NodeType {
         VALUE,
+        INT_VALUE,
+        DOUBLE_VALUE,
         OPERATION,
         LIST,
         BODY,
-        PROGRAM
+        PROGRAM,
+        ASSIGNED,
+        METHOD_CALL,
+        RETURN,
+        PRINT,
+        DECLARE,
+        TERM,
+        FACTOR,
+        POWER,
+        EXPRESSION,
+        ATOM,
+        VARIABLE_GET
     }
 
     protected List<Node> children = new ArrayList<>();
-    private Node parent = null;
+    protected Node parent = null;
 
-    private Type type = Type.VALUE;
+    protected NodeType nodeType = NodeType.VALUE;
 
-    private Token value = null;
+    protected Token valueToken = null;
 
     private int childIndex = 0;
 
-    public Node( Type type ) {
-        this.type = type;
+    public Node() {
     }
 
-    public Node( Node parent ) {
-        this.parent = parent;
+    public Node( NodeType nodeType) {
+        this.nodeType = nodeType;
     }
 
     public Node( Token token ) {
-        this.value = token;
+        this.valueToken = token;
     }
 
     public Node( Token token, Node left, Node right ) {
-        this.value = token;
+        this.valueToken = token;
 
         addChild( left );
         addChild( right );
@@ -53,7 +69,7 @@ public class Node {
         return children.get( childIndex );
     }
 
-    private Node getChild( int index ) {
+    public Node getChild( int index ) {
         if ( index >= children.size() ) {
             return null;
         }
@@ -77,47 +93,45 @@ public class Node {
         this.parent = parent;
     }
 
-    public Token getValue() {
-        return value;
+    public Token getValueToken() {
+        return valueToken;
     }
 
-    public void setValue( Token value ) {
-        this.value = value;
+    public void setValueToken(Token valueToken) {
+        this.valueToken = valueToken;
+    }
+
+    public List<Node> getChildren() {
+        return children;
     }
 
     public String toTreeString( int depth ) {
         StringBuilder result = new StringBuilder();
 
-        if (type != Type.VALUE) {
-            result.append( type.toString() ).append( "\n" );
+        if (nodeType != NodeType.VALUE) {
+            result.append( nodeType.toString() );
+            if ( valueToken != null && ( nodeType == NodeType.EXPRESSION || nodeType == NodeType.TERM ) ) {
+                result.append( " " ).append( valueToken.getType().toString() );
+            }
+            result.append( "\n" );
         } else {
-            if ( value != null ) {
-                result.append( value.toString() ).append( "\n" );
+            if ( valueToken != null ) {
+                result.append( valueToken.toString() ).append( "\n" );
             } else {
                 result.append( "null\n" );
             }
         }
 
-        children.forEach( child -> {
-            for ( int i = 0; i <= depth; i++ ) {
-                result.append( "\t" );
-            }
-            result.append( child.toTreeString( depth + 1 ) );
-        } );
-
-//        if ( left() != null ) {
-//            for ( int i = 0; i <= depth; i++ ) {
-//                result.append( "\t" );
-//            }
-//            result.append( "0: " ).append( left().toTreeString( depth + 1 ) );
-//        }
-//
-//        if ( right() != null ) {
-//            for ( int i = 0; i <= depth; i++ ) {
-//                result.append( "\t" );
-//            }
-//            result.append( "1: " ).append( right().toTreeString( depth + 1 ) );
-//        }
+        if (children != null) {
+            children.forEach( child -> {
+                for ( int i = 0; i <= depth; i++ ) {
+                    result.append( "\t" );
+                }
+                if ( child != null ) {
+                    result.append( child.toTreeString( depth + 1 ) );
+                }
+            } );
+        }
 
         return result.toString();
     }
@@ -130,7 +144,7 @@ public class Node {
         Node node = (Node) o;
 
         if ( children != null ? !children.equals( node.children ) : node.children != null ) return false;
-        if ( value != null ? !value.equals( node.value ) : node.value != null ) return false;
+        if ( valueToken != null ? !valueToken.equals( node.valueToken) : node.valueToken != null ) return false;
 
         return true;
     }
@@ -138,7 +152,7 @@ public class Node {
     @Override
     public int hashCode() {
         int result = children != null ? children.hashCode() : 0;
-        result = 31 * result + (value != null ? value.hashCode() : 0);
+        result = 31 * result + (valueToken != null ? valueToken.hashCode() : 0);
         return result;
     }
 
@@ -154,7 +168,7 @@ public class Node {
             if ( !stack.empty() ) {
                 current = stack.pop();
 
-                result.append( current.value ).append( "\n" );
+                result.append( current.valueToken).append( "\n" );
 
                 if ( current.right() != null ) {
                     current = current.right();
@@ -171,11 +185,11 @@ public class Node {
         return result.toString();
     }
 
-    public Type getType() {
-        return type;
+    public NodeType getNodeType() {
+        return nodeType;
     }
 
-    public void setType( Type type ) {
-        this.type = type;
+    public void setNodeType(NodeType nodeType) {
+        this.nodeType = nodeType;
     }
 }

@@ -1,3 +1,5 @@
+package parser;
+
 public class ParsingErrorException extends Exception{
     public ParsingErrorException() {
         super();

@@ -1,3 +1,5 @@
+package tokenizer;
+
 public class Token {
     public enum Type {
         PLUS,
@@ -28,6 +30,7 @@ public class Token {
         CLOSE_BRACE,
 
         RETURN,
+        PRINT,
 
         END_OF_PROGRAM
     }
@@ -83,9 +86,6 @@ public class Token {
             return type.toString();
         }
 
-        return "Token{" +
-                "type=" + type +
-                ", value='" + value + '\'' +
-                '}';
+        return type + ": " + value;
     }
 }

@@ -1,3 +1,7 @@
+package tokenizer;
+
+import buffer.BufferInterface;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,12 +35,14 @@ public class Tokenizer implements TokenizerInterface {
         readyTokens.put( Token.Type.EQUALS, new Token( Token.Type.EQUALS ) );
 
         readyTokens.put( Token.Type.SEMICOLON, new Token( Token.Type.SEMICOLON ) );
+        readyTokens.put( Token.Type.COMMA, new Token( Token.Type.COMMA ) );
 
         readyTokens.put( Token.Type.INTEGER_TYPE, new Token( Token.Type.INTEGER_TYPE ) );
         readyTokens.put( Token.Type.DOUBLE_TYPE, new Token( Token.Type.DOUBLE_TYPE ) );
         readyTokens.put( Token.Type.VOID_TYPE, new Token( Token.Type.VOID_TYPE ) );
 
         readyTokens.put( Token.Type.RETURN, new Token( Token.Type.RETURN ) );
+        readyTokens.put( Token.Type.PRINT, new Token( Token.Type.PRINT ) );
 
         readyTokens.put( Token.Type.END_OF_PROGRAM, new Token( Token.Type.END_OF_PROGRAM ) );
     }
@@ -49,6 +55,7 @@ public class Tokenizer implements TokenizerInterface {
         this.buffer = buffer;
 
         keywords.put( "return", Token.Type.RETURN );
+        keywords.put( "print", Token.Type.PRINT );
         keywords.put( "int", Token.Type.INTEGER_TYPE );
         keywords.put( "double", Token.Type.DOUBLE_TYPE );
         keywords.put( "void", Token.Type.VOID_TYPE );
