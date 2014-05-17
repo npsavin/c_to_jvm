@@ -1,7 +1,7 @@
 import buffer.Buffer;
 import buffer.BufferInterface;
 import compiler.Compiler;
-import parser.Node;
+import parser.nodes.Node;
 import parser.Parser;
 import parser.ParsingErrorException;
 import tokenizer.Tokenizer;

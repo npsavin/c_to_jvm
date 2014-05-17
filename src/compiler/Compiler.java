@@ -1,6 +1,6 @@
 package compiler;
 
-import parser.*;
+import parser.nodes.*;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -13,24 +13,6 @@ import java.util.*;
 
 public class Compiler {
     private static final String OUT_FILE_PATH = "./jasminOut/MainJasmin.j";
-
-    private static final String TAB_CODE = "   ";
-
-    private static final String HEADER_CODE =
-            ".source                  MainJasmin.java\n" +
-                    ".class                   public MainJasmin\n" +
-                    ".super                   java/lang/Object\n\n\n";
-
-    private static final String CONSTRUCTOR_CODE =
-            ".method                  public <init>()V\n" +
-                    TAB_CODE + ".limit stack          1\n" +
-                    TAB_CODE + ".limit locals         1\n" +
-                    TAB_CODE + ".line                 1\n" +
-                    TAB_CODE + "aload_0\n" +
-                    TAB_CODE + "invokespecial         java/lang/Object/<init>()V\n" +
-                    TAB_CODE + "return\n" +
-                    ".end method\n\n";
-
 
     private Map<ValueNode.ValueType, ValueType> typeMap = new HashMap<>();
     private Map<String, Variable> variableMap = new HashMap<>();
@@ -65,8 +47,8 @@ public class Compiler {
         StringBuilder builder = new StringBuilder();
 
         try {
-            builder.append(HEADER_CODE);
-            builder.append(CONSTRUCTOR_CODE);
+            builder.append(CodeBuilder.CODE_HEADER);
+            builder.append(CodeBuilder.CODE_CONSTRUCTOR);
 
             for (Node method : root.getChildren()) {
                 builder.append(compileMethod(method));
@@ -84,10 +66,10 @@ public class Compiler {
         StringBuilder builder = new StringBuilder();
 
         variableMap = new HashMap<>();
+        Arrays.fill(localVariables, 0);
+
         stackDepth = 0;
         maxStackDepth = 0;
-
-        builder.append(".method                  ");
 
         MethodNode methodNode = (MethodNode) node;
 
@@ -95,17 +77,13 @@ public class Compiler {
 
         currentMethod = methodNode;
 
+        String signature;
         // generate method signature
         if (methodNode.getName().getValue().equals("main")) {
-            builder.append("public static main([Ljava/lang/String;)V\n");
+            signature = CodeBuilder.METHOD_MAIN_SIGNATURE;
         } else {
-            builder.append("public static ")
-                    .append(constructMetodSignature(methodNode))
-                    .append('\n');
+            signature = CodeBuilder.methodDeclarationHeader(constructMethodDeclareSignature(methodNode));
         }
-
-        String signature = builder.toString();
-        builder.setLength(0);
 
         List<Node> variables = methodNode.getVarList().getChildren();
 
@@ -116,15 +94,20 @@ public class Compiler {
         }
 
         // move arguments from stack to variables
-        for (int i = variables.size() - 1; i >= 0; i--) {
-            VariableNode var = (VariableNode) variables.get(i);
-
-            builder.append(storeStackToVariable(var.getVariableName()));
-        }
+//        for (int i = variables.size() - 1; i >= 0; i--) {
+//            VariableNode var = (VariableNode) variables.get(i);
+//
+//            builder.append(loadVariableToStack(var.getVariableName()));
+//        }
 
         // compile method commands
         for (Node command : methodNode.getBody().getChildren()) {
             builder.append(compileCommand(command));
+        }
+
+        // write return for void result type
+        if (methodNode.getResultType() == ValueNode.ValueType.VOID_VALUE) {
+            builder.append("   return\n");
         }
 
         String body = builder.toString();
@@ -145,16 +128,9 @@ public class Compiler {
             }
         }
 
-        builder.append(TAB_CODE)
-                .append(".limit stack          ").append(maxStackDepth).append("\n")
-                .append(TAB_CODE)
-                .append(".limit locals         ").append(variablesAmount).append("\n");
+        String limits = CodeBuilder.methodLimits(maxStackDepth, variablesAmount);
 
-        String limits = builder.toString();
-
-        builder.setLength(0);
-
-        String footer = ".end method\n\n";
+        String footer = CodeBuilder.METHOD_END;
         currentMethod = null;
 
         builder.append(signature).append(limits).append(body).append(footer);
@@ -186,7 +162,7 @@ public class Compiler {
                 break;
 
             default:
-                builder.append(TAB_CODE)
+                builder.append(CodeBuilder.CODE_INDENT)
                         .append("UNEXPECTED NODE\n");
                 break;
         }
@@ -203,28 +179,13 @@ public class Compiler {
             builder.append(compileExpression(command.getChild(0)));
         }
 
-        String suffix;
+        ValueType expected = typeMap.get(currentMethod.getResultType());
 
-        switch (currentMethod.getResultType()) {
-            case INTEGER_VALUE:
-                suffix = "i";
-                break;
-
-            case DOUBLE_VALUE:
-                suffix = "d";
-                break;
-
-            case VOID_VALUE:
-                suffix = "";
-                break;
-
-            default:
-                throw new CompilationErrorException("method returns value of unknown type");
+        if (!typeOnStack.equals(expected)) {
+            builder.append(CodeBuilder.cast(typeOnStack, expected));
         }
 
-        builder.append(TAB_CODE)
-                .append(suffix)
-                .append("return\n");
+        builder.append(CodeBuilder.returnOperation(expected));
 
         return builder.toString();
     }
@@ -232,8 +193,10 @@ public class Compiler {
     private String compilePrint(Node command) throws CompilationErrorException {
         StringBuilder builder = new StringBuilder();
 
-        builder.append(TAB_CODE)
+        builder.append(CodeBuilder.CODE_INDENT)
                 .append("getstatic             java/lang/System/out Ljava/io/PrintStream;\n");
+
+        pushed(1);
 
         Node expression = command.getChild(0);
 
@@ -243,7 +206,7 @@ public class Compiler {
 
         String type = typeOnStack.toString();
 
-        builder.append(TAB_CODE).append("invokevirtual         java/io/PrintStream/println(").append(type).append(")V\n");
+        builder.append(CodeBuilder.CODE_INDENT).append("invokevirtual         java/io/PrintStream/println(").append(type).append(")V\n");
 
         return builder.toString();
     }
@@ -254,6 +217,12 @@ public class Compiler {
         Node expression = command.getChild(0).getChild(0);
 
         builder.append(compileExpression(expression));
+
+        Variable variable = variableMap.get(((VariableNode) command).getVariableName());
+
+        if ( typeOnStack != variable.type ) {
+            builder.append(CodeBuilder.cast(typeOnStack, variable.type));
+        }
 
         builder.append(storeStackToVariable(((VariableNode) command).getVariableName()));
 
@@ -277,55 +246,29 @@ public class Compiler {
             builder.append(compileTerm(expression.getChild(0)));
             ValueType firstType = typeOnStack;
 
-            String operation;
+            CodeBuilder.StackOperation operation;
 
             switch (expression.getValueToken().getType()) {
                 case PLUS:
-                    operation = "add";
+                    operation = CodeBuilder.StackOperation.ADD;
                     break;
                 case MINUS:
-                    operation = "sub";
+                    operation = CodeBuilder.StackOperation.SUB;
                     break;
                 default:
-                    throw new CompilationErrorException("Unknown operation with two parameters");
+                    throw new CompilationErrorException("Unknown operation with two parameters: " + expression.getValueToken().getType());
             }
 
             builder.append(compileTerm(expression.getChild(1)));
             ValueType secondType = typeOnStack;
 
-            if (firstType == ValueType.I && secondType == ValueType.I) {
-                builder.append(TAB_CODE)
-                        .append("i").append(operation).append("\n");
-                typeOnStack = ValueType.I;
-            } else {
-                if (secondType == ValueType.I) {
-                    // cast second argument ( stack top ) to double
-                    builder.append(TAB_CODE).append("i2d                   ; cast integer on stack to double, for ")
-                            .append(operation)
-                            .append('\n');
-                } else if (firstType == ValueType.I) {
-                    // cast first argument ( stack second ) to double
-                    builder.append(TAB_CODE)
-                            .append("dstore                ").append(getMinVariableIndex(ValueType.D))
-                            .append("    ; temporary")
-                            .append("\n");
-                    builder.append(TAB_CODE).append("i2d                   ; cast integer on stack to double, for ")
-                            .append(operation)
-                            .append('\n');
-                    builder.append(TAB_CODE).append("dload                 ").append(getMinVariableIndex(ValueType.D))
-                            .append("    ; temporary")
-                            .append("\n");
-                }
-
-                builder.append(TAB_CODE)
-                        .append("d").append(operation).append("\n");
-                typeOnStack = ValueType.D;
-                stackDepth--;
-            }
+            builder.append(compileBinaryStackOperation(firstType, secondType, operation));
         }
 
         return builder.toString();
     }
+
+
 
     private String compileTerm(Node term) throws CompilationErrorException {
         StringBuilder builder = new StringBuilder();
@@ -336,14 +279,14 @@ public class Compiler {
             builder.append(compileFactor(term.getChild(0)));
             ValueType firstType = typeOnStack;
 
-            String operation;
+            CodeBuilder.StackOperation operation;
 
             switch (term.getValueToken().getType()) {
                 case MULTIPLY:
-                    operation = "mul";
+                    operation = CodeBuilder.StackOperation.MUL;
                     break;
                 case DIVIDE:
-                    operation = "div";
+                    operation = CodeBuilder.StackOperation.DIV;
                     break;
                 default:
                     throw new CompilationErrorException("Unknown operation with two parameters: " + term.getValueToken().getType());
@@ -352,35 +295,7 @@ public class Compiler {
             builder.append(compileTerm(term.getChild(1)));
             ValueType secondType = typeOnStack;
 
-            if (firstType == ValueType.I && secondType == ValueType.I) {
-                builder.append(TAB_CODE)
-                        .append("i").append(operation).append("\n");
-                typeOnStack = ValueType.I;
-            } else {
-                if (secondType == ValueType.I) {
-                    // cast second argument ( stack top ) to double
-                    builder.append(TAB_CODE)
-                            .append("i2d                   ; cast integer on stack to double, for ")
-                            .append(operation)
-                            .append('\n');
-                } else if (firstType == ValueType.I) {
-                    // cast first argument ( stack second ) to double
-                    builder.append(TAB_CODE).append("dstore                ").append(getMinVariableIndex(ValueType.D))
-                            .append("    ; temporary")
-                            .append("\n");
-                    builder.append(TAB_CODE).append("i2d                   ; cast integer on stack to double, for ")
-                            .append(operation)
-                            .append('\n');
-                    builder.append(TAB_CODE).append("dload                 ").append(getMinVariableIndex(ValueType.D))
-                            .append("    ; temporary")
-                            .append("\n");
-                }
-
-                builder.append(TAB_CODE)
-                        .append("d").append(operation).append("\n");
-                typeOnStack = ValueType.D;
-                stackDepth--;
-            }
+            builder.append(compileBinaryStackOperation(firstType, secondType, operation));
         }
 
         return builder.toString();
@@ -409,38 +324,63 @@ public class Compiler {
             ValueType secondType = typeOnStack;
 
             if (firstType == ValueType.I && secondType == ValueType.I) {
-                builder.append(TAB_CODE)
+                builder.append(CodeBuilder.CODE_INDENT)
                         .append("i").append(operation).append("\n");
                 typeOnStack = ValueType.I;
             } else {
                 if (firstType == ValueType.D) {
                     // cast second argument ( stack top ) to double
-                    builder.append(TAB_CODE).append("i2d                   ; cast integer on stack to double\n");
+                    builder.append(CodeBuilder.CODE_INDENT).append("i2d                   ; cast integer on stack to double\n");
+                    popped(ValueType.I);
+                    pushed(ValueType.D);
                 } else if (secondType == ValueType.D) {
                     // cast first argument ( stack second ) to double
-                    builder.append(TAB_CODE).append("dstore                ").append(getMinVariableIndex(ValueType.D)).append("\n");
-                    builder.append(TAB_CODE).append("i2d                   ; cast integer on stack to double\n");
-                    builder.append(TAB_CODE).append("dload                 ").append(getMinVariableIndex(ValueType.D)).append("\n");
+                    int index = getMinVariableIndex(ValueType.D);
+                    builder.append(CodeBuilder.storeStackToVariable(ValueType.D, index, "temp"));
+                    popped(ValueType.I);
+                    builder.append(CodeBuilder.cast(ValueType.I, ValueType.D));
+                    builder.append(CodeBuilder.loadVariableToStack(ValueType.D, index, "temp"));
+                    pushed(ValueType.D);
                 }
 
-                builder.append(TAB_CODE)
+                builder.append(CodeBuilder.CODE_INDENT)
                         .append("d").append(operation).append("\n");
                 typeOnStack = ValueType.D;
 
-                stackDepth--;
+                popped(typeOnStack);
             }
         }
 
         return builder.toString();
     }
 
-    // TODO: unary minus does not work
     private String compilePower(Node power) throws CompilationErrorException {
         StringBuilder builder = new StringBuilder();
 
-        if (power.getNodeType() == Node.NodeType.TERM) {
-            builder.append(compileAtom(power));
-            builder.append(TAB_CODE).append("APPLY UNARY MINUS to ").append(power.getNodeType()).append('\n');
+        if (power.getNodeType() == Node.NodeType.UNARY_OPERATION) {
+            Node atom = ((UnaryOperationNode) power).getOperand();
+            builder.append(compileAtom(atom));
+
+            String value;
+
+            switch (typeOnStack) {
+                case I:
+                    value = "-1";
+                    break;
+
+                case D:
+                    value = "-1.0";
+                    break;
+
+                default:
+                    throw new CompilationErrorException("Cannot apply unary minus to unknown type " + typeOnStack);
+            }
+
+            builder.append(CodeBuilder.loadValueToStack(typeOnStack, value));
+            pushed(typeOnStack);
+            builder.append(CodeBuilder.operationOnStack(typeOnStack, CodeBuilder.StackOperation.MUL));
+            popped(typeOnStack);
+
         } else {
             builder.append(compileAtom(power));
         }
@@ -455,20 +395,13 @@ public class Compiler {
             case VALUE:
                 ValueNode valueNode = (ValueNode) atom;
 
-                switch (valueNode.getValueType()) {
-                    case INTEGER_VALUE:
-                        builder.append(TAB_CODE).append("ldc                   ").append(valueNode.getValue()).append('\n');
-                        pushed();
-                        break;
+                String value = valueNode.getValue();
+                ValueType type = typeMap.get(valueNode.getValueType());
 
-                    case DOUBLE_VALUE:
-                        builder.append(TAB_CODE).append("ldc2_w                ").append(valueNode.getValue()).append('\n');
-                        pushed();
-                        pushed();
-                        break;
-                }
+                builder.append(CodeBuilder.loadValueToStack(type, value));
+                pushed(type);
 
-                typeOnStack = typeMap.get(valueNode.getValueType());
+                typeOnStack = type;
 
                 break;
 
@@ -476,6 +409,7 @@ public class Compiler {
                 builder.append(loadVariableToStack(((VariableNode) atom).getVariableName()));
                 break;
 
+            case UNARY_OPERATION:
             case EXPRESSION:
                 builder.append(compileExpression(atom));
                 break;
@@ -500,17 +434,22 @@ public class Compiler {
                     "Method with name '" + methodCall.getName() + "' was not declared earlier");
         }
 
-        builder.append(TAB_CODE).append("; METHOD CALL").append('\n');
+        builder.append(CodeBuilder.CODE_INDENT).append("; METHOD CALL").append('\n');
 
         // push all parameters values to stack
         for (Node expression : methodCall.getParamsList().getChildren()) {
             builder.append(compileExpression(expression));
         }
 
-        builder.append(TAB_CODE)
+        builder.append(CodeBuilder.CODE_INDENT)
                 .append("invokestatic          ")
-                .append(constructMetodSignature(methodNode))
+                .append(constructMethodCallSignature(methodNode))
                 .append("\n");
+
+        if (methodNode.getResultType() != ValueNode.ValueType.VOID_VALUE) {
+            pushed(typeMap.get(methodNode.getResultType()));
+            typeOnStack = typeMap.get(methodNode.getResultType());
+        }
 
         return builder.toString();
     }
@@ -523,7 +462,7 @@ public class Compiler {
         try {
             Files.createFile(path);
         } catch (FileAlreadyExistsException e) {
-            System.err.println("already exists: " + e.getMessage());
+            System.err.println("Output file already exists (" + e.getMessage() + ") and will be overwritten");
         }
     }
 
@@ -545,63 +484,57 @@ public class Compiler {
     }
 
     private String storeStackToVariable(String variableName) throws CompilationErrorException {
-        StringBuilder builder = new StringBuilder();
-
         Variable variable = variableMap.get(variableName);
+        String result = CodeBuilder.storeStackToVariable(variable);
 
-        builder.append(TAB_CODE);
+        popped(variable.type);
 
-        switch (variable.type) {
-            case I:
-                builder.append("i");
-                break;
-            case D:
-                builder.append("d");
-                break;
-            default:
-                throw new CompilationErrorException("values can be assigned only to integer and double type variables");
-        }
-
-        builder.append("store                ")
-                .append(variable.index)
-                .append("    ; store stack top to variable \"")
-                .append(variable.name)
-                .append("\"")
-                .append("\n");
-
-        stackDepth--;
-
-        return builder.toString();
+        return result;
     }
 
     private String loadVariableToStack(String variableName) throws CompilationErrorException {
-        StringBuilder builder = new StringBuilder();
-
         Variable variable = variableMap.get(variableName);
 
-        builder.append(TAB_CODE);
-
-        switch (variable.type) {
-            case I:
-                builder.append("i");
-                break;
-            case D:
-                builder.append("d");
-                break;
-            default:
-                throw new CompilationErrorException("values can be assigned only to integer and double type variables");
-        }
-
-        builder.append("load                 ")
-                .append(variable.index)
-                .append("    ; load variable \"")
-                .append(variable.name)
-                .append("\" to stack")
-                .append("\n");
+        String result = CodeBuilder.loadVariableToStack(variable);
 
         typeOnStack = variable.type;
 
-        pushed();
+        pushed(typeOnStack);
+
+        return result;
+    }
+
+    private String compileBinaryStackOperation(
+            ValueType firstType,
+            ValueType secondType,
+            CodeBuilder.StackOperation operation) throws CompilationErrorException {
+        StringBuilder builder = new StringBuilder();
+
+        if (firstType == ValueType.I && secondType == ValueType.I) {
+            // both values are integer, no need to cast
+            builder.append(CodeBuilder.operationOnStack(ValueType.I, operation));
+            typeOnStack = ValueType.I;
+        } else {
+            // one value is double - need double multiplication
+            if (secondType == ValueType.I) {
+                // cast second argument ( stack top ) to double
+                builder.append(CodeBuilder.cast(ValueType.I, ValueType.D));
+                popped(ValueType.I);
+                pushed(ValueType.D);
+            } else if (firstType == ValueType.I) {
+                int index = getMinVariableIndex(ValueType.D);
+                // cast first argument ( stack second ) to double
+                builder.append(CodeBuilder.storeStackToVariable(ValueType.D, index, "temp"));
+                popped(ValueType.I);
+                builder.append(CodeBuilder.cast(ValueType.I, ValueType.D));
+                builder.append(CodeBuilder.loadVariableToStack(ValueType.D, index, "temp"));
+                pushed(ValueType.D);
+            }
+
+            builder.append(CodeBuilder.operationOnStack(ValueType.D, operation));
+            typeOnStack = ValueType.D;
+            popped(ValueType.D);
+        }
 
         return builder.toString();
     }
@@ -623,8 +556,12 @@ public class Compiler {
         return -1;
     }
 
-    private String constructMetodSignature(MethodNode methodNode) {
-        StringBuilder result = new StringBuilder("MainJasmin/");
+    private String constructMethodCallSignature(MethodNode methodNode) {
+        return "MainJasmin/" + constructMethodDeclareSignature(methodNode);
+    }
+
+    private String constructMethodDeclareSignature(MethodNode methodNode) {
+        StringBuilder result = new StringBuilder("");
 
         result.append(methodNode.getName().getValue()).append("(");
         for (Node var : methodNode.getVarList().getChildren()) {
@@ -637,21 +574,63 @@ public class Compiler {
         return result.toString();
     }
 
-    private void pushed() {
-        stackDepth++;
+    private void pushed(int size) {
+        stackDepth += size;
 
         if (stackDepth > maxStackDepth) {
             maxStackDepth = stackDepth;
         }
     }
 
-    private enum ValueType {
+    private void pushed(ValueType type) throws CompilationErrorException {
+        int size;
+
+        switch (type) {
+            case I:
+                size = 1;
+                break;
+
+            case D:
+                size = 2;
+                break;
+
+            default:
+                throw new CompilationErrorException("Cannot push on stack item of unknown type: " + type);
+        }
+
+        pushed(size);
+    }
+
+    private void popped(int size) {
+        stackDepth -= size;
+    }
+
+    private void popped(ValueType type) throws CompilationErrorException {
+        int size;
+
+        switch (type) {
+            case I:
+                size = 1;
+                break;
+
+            case D:
+                size = 2;
+                break;
+
+            default:
+                throw new CompilationErrorException("Cannot pop on stack item of unknown type: " + type);
+        }
+
+        popped(size);
+    }
+
+    public static enum ValueType {
         I,
         D,
         V
     }
 
-    private class Variable {
+    public static class Variable {
         private Variable(String name, ValueType type, int index) {
             this.name = name;
             this.type = type;
@@ -661,5 +640,17 @@ public class Compiler {
         private String name;
         private ValueType type;
         private int index;
+
+        public String getName() {
+            return name;
+        }
+
+        public ValueType getType() {
+            return type;
+        }
+
+        public int getIndex() {
+            return index;
+        }
     }
 }

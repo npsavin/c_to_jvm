@@ -1,4 +1,4 @@
-package parser;
+package parser.nodes;
 
 import tokenizer.Token;
 

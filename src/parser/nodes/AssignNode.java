@@ -1,4 +1,4 @@
-package parser;
+package parser.nodes;
 
 public class AssignNode extends Node {
     private VariableNode to;
@@ -23,6 +23,6 @@ public class AssignNode extends Node {
 
     @Override
     public String toTreeString(int depth) {
-        return to.getVariableName() + " = \n" + from.toTreeString(depth+1);
+        return indent(depth) + to.getVariableName() + " = \n" + from.toTreeString(depth + 1);
     }
 }

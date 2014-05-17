@@ -1,5 +1,6 @@
 package parser;
 
+import parser.nodes.*;
 import tokenizer.IllegalCharacterException;
 import tokenizer.Token;
 import tokenizer.TokenizerInterface;
@@ -361,14 +362,12 @@ public class Parser implements ParserInterface {
     @Override
     public Node parsePower() throws ParsingErrorException {
         if ( currentToken.hasType( Token.Type.MINUS ) ) {
-            Token operation = currentToken;
-
+            // pass minus
             getToken();
 
-            Node result = new Node( operation, parseAtom(), null );
-            result.setNodeType(Node.NodeType.TERM);
-
-            return result;
+            return new UnaryOperationNode(
+                    parseAtom(),
+                    UnaryOperationNode.OperationType.UNARY_MINUS);
         }
 
         return parseAtom();
@@ -388,6 +387,8 @@ public class Parser implements ParserInterface {
                     Node paramList = parseParamList();
 
                     MethodCallNode methodCallNode = new MethodCallNode( identifier.getValueToken(), paramList );
+
+                    System.err.println(methodCallNode.toTreeString(0));
 
                     if ( currentToken.hasType( Token.Type.CLOSE_BRACKET ) ) {
                         getToken();
@@ -417,6 +418,9 @@ public class Parser implements ParserInterface {
                 return valueNode;
             }
 
+            case MINUS:
+                return parseExpression();
+
             case OPEN_BRACKET :
                 getToken();
                 Node expression = parseExpression();
@@ -431,6 +435,6 @@ public class Parser implements ParserInterface {
                 return expression;
         }
 
-        return null;
+        throw new ParsingErrorException("Cannot parse atom: unexpected token " + currentToken);
     }
 }

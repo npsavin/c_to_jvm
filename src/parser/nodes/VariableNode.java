@@ -1,4 +1,4 @@
-package parser;
+package parser.nodes;
 
 public class VariableNode extends Node {
     private ValueNode.ValueType variableType;
@@ -41,16 +41,14 @@ public class VariableNode extends Node {
     public String toTreeString( int depth ) {
         StringBuilder result = new StringBuilder();
 
-        result.append(variableName);
+        result.append(indent(depth))
+                .append(variableName);
         if (variableType != null) {
             result.append(" : ").append(variableType);
         }
         result.append('\n');
 
         if (!children.isEmpty()) {
-            for ( int i = 0; i <= depth; i++ ) {
-                result.append( "\t" );
-            }
             result.append(children.get(0).toTreeString(depth+1));
         }
 

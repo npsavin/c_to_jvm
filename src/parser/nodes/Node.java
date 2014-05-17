@@ -1,4 +1,4 @@
-package parser;
+package parser.nodes;
 
 import tokenizer.Token;
 
@@ -25,7 +25,8 @@ public class Node {
         POWER,
         EXPRESSION,
         ATOM,
-        VARIABLE_GET
+        VARIABLE_GET,
+        UNARY_OPERATION
     }
 
     protected List<Node> children = new ArrayList<>();
@@ -109,6 +110,7 @@ public class Node {
         StringBuilder result = new StringBuilder();
 
         if (nodeType != NodeType.VALUE) {
+            result.append(indent(depth));
             result.append( nodeType.toString() );
             if ( valueToken != null && ( nodeType == NodeType.EXPRESSION || nodeType == NodeType.TERM ) ) {
                 result.append( " " ).append( valueToken.getType().toString() );
@@ -116,21 +118,32 @@ public class Node {
             result.append( "\n" );
         } else {
             if ( valueToken != null ) {
+                result.append(indent(depth));
                 result.append( valueToken.toString() ).append( "\n" );
             } else {
+                result.append(indent(depth));
                 result.append( "null\n" );
             }
         }
 
         if (children != null) {
             children.forEach( child -> {
-                for ( int i = 0; i <= depth; i++ ) {
-                    result.append( "\t" );
-                }
                 if ( child != null ) {
                     result.append( child.toTreeString( depth + 1 ) );
                 }
             } );
+        } else {
+            result.append( "<empty>" );
+        }
+
+        return result.toString();
+    }
+
+    protected String indent(int length) {
+        StringBuilder result = new StringBuilder();
+
+        for ( int i = 0; i < length; i++ ) {
+            result.append( "\t" );
         }
 
         return result.toString();

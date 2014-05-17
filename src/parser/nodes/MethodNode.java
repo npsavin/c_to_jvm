@@ -1,4 +1,4 @@
-package parser;
+package parser.nodes;
 
 import tokenizer.Token;
 
@@ -39,34 +39,26 @@ public class MethodNode extends Node {
     public String toTreeString( int depth ) {
         StringBuilder result = new StringBuilder();
 
-        if ( nodeType != NodeType.VALUE) {
-            if ( returnType != null ) {
-                result.append( returnType.toString() ).append( "\n" );
-            }
-        } else {
-            if ( valueToken != null ) {
-                result.append( valueToken.toString() ).append( "\n" );
-            } else {
-                result.append( "null\n" );
-            }
+        result.append(indent(depth))
+                .append("METHOD ").append(name.getValue())
+                .append(" RETURN ").append(returnType.getValueType())
+                .append('\n');
+
+        result.append(indent(depth+1))
+                .append("ARGLIST:").append('\n');
+
+        if (varList.children != null) {
+            varList.children.forEach(child -> result.append(indent(depth+2)).append(child.toString()).append('\n'));
         }
 
-        appendWithIndent( result, "VARLIST\n", depth );
-
-        varList.children.forEach( child -> appendWithIndent( result, child.toTreeString( depth + 2 ), depth + 1 ) );
+        result.append(indent(depth+1))
+                .append("BODY:").append('\n');
 
         if ( children != null ) {
-            children.forEach( child -> appendWithIndent( result, child.toTreeString( depth + 1 ), depth ) );
+            children.forEach( child -> result.append(child.toTreeString(depth+2)).append('\n') );
         }
-
 
         return result.toString();
     }
 
-    private void appendWithIndent( StringBuilder builder, String value, int indent ) {
-        for ( int i = 0; i <= indent; i++ ) {
-            builder.append( "\t" );
-        }
-        builder.append( value );
-    }
 }

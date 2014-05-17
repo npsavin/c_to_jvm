@@ -1,5 +1,7 @@
 package parser;
 
+import parser.nodes.Node;
+
 public interface ParserInterface {
     public Node parseProgram() throws ParsingErrorException;
     public Node parseMethod() throws ParsingErrorException;
