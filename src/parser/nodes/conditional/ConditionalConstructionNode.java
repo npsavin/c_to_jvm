@@ -61,7 +61,9 @@ public class ConditionalConstructionNode extends Node {
             result.append(elseIfBlockNode.toTreeString(depth + 1));
         }
 
-        result.append(elseBlockNode.toTreeString(depth + 1));
+        if (elseBlockNode != null) {
+            result.append(elseBlockNode.toTreeString(depth + 1));
+        }
 
         return result.toString();
     }

@@ -68,7 +68,7 @@ public class Parser implements ParserInterface {
 
         checkAndPassCurrentToken(Token.Type.OPEN_BRACE);
 
-        Node body = parseBody();
+        BodyNode body = parseBody();
 
         checkAndPassCurrentToken(Token.Type.CLOSE_BRACE);
 

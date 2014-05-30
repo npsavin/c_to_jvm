@@ -6,9 +6,9 @@ public class MethodNode extends Node {
     private TypeNode returnType;
     private Token name;
     private Node varList;
-    private Node body;
+    private BodyNode body;
 
-    public MethodNode( TypeNode returnType, Token name, Node varList, Node body ) {
+    public MethodNode( TypeNode returnType, Token name, Node varList, BodyNode body ) {
         super(name);
 
         setValueToken(name);
@@ -32,7 +32,7 @@ public class MethodNode extends Node {
         return varList;
     }
 
-    public Node getBody() {
+    public BodyNode getBody() {
         return body;
     }
 

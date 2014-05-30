@@ -1,5 +1,6 @@
 import buffer.Buffer;
 import buffer.BufferInterface;
+import compiler.ProgramCompiler;
 import parser.Parser;
 import parser.ParsingErrorException;
 import parser.nodes.Node;
@@ -29,8 +30,8 @@ public class Main {
             String resultString = result.toTreeString( 0 );
             System.out.println(resultString);
 
-            //compiler.Compiler compiler = new Compiler();
-            //compiler.compileProgram( result );
+            ProgramCompiler compiler = new ProgramCompiler();
+            compiler.compileProgram( result );
         } catch ( ParsingErrorException e ) {
             System.err.println( e.getMessage() );
             e.printStackTrace();

@@ -1,9 +1,12 @@
 package compiler;
 
+import tokenizer.Token;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class CodeBuilder {
+
     public static enum StackOperation {
         ADD,
         SUB,
@@ -31,18 +34,25 @@ public class CodeBuilder {
     public static final String METHOD_MAIN_SIGNATURE = ".method                  public static main([Ljava/lang/String;)V\n";
     public static final String METHOD_END = ".end method\n\n";
 
-    private static Map<Compiler.ValueType, String> typeSymbols = new HashMap<>();
+    private static Map<ProgramCompiler.ValueType, String> typeSymbols = new HashMap<>();
     private static Map<StackOperation, String> operationCodes = new HashMap<>();
+    private static Map<Token.Type, String> comparisonOperators = new HashMap<>();
 
     static {
-        typeSymbols.put(Compiler.ValueType.I, "i");
-        typeSymbols.put(Compiler.ValueType.D, "d");
-        typeSymbols.put(Compiler.ValueType.V, "");
+        typeSymbols.put(ProgramCompiler.ValueType.I, "i");
+        typeSymbols.put(ProgramCompiler.ValueType.D, "d");
+        typeSymbols.put(ProgramCompiler.ValueType.V, "");
 
         operationCodes.put(StackOperation.ADD, "add");
         operationCodes.put(StackOperation.SUB, "sub");
         operationCodes.put(StackOperation.MUL, "mul");
         operationCodes.put(StackOperation.DIV, "div");
+
+        comparisonOperators.put(Token.Type.EQUALS, "ifeq");
+        comparisonOperators.put(Token.Type.GREATER_THAN, "ifgt");
+        comparisonOperators.put(Token.Type.GREATER_THAN_OR_EQUALS, "ifge");
+        comparisonOperators.put(Token.Type.LESS_THAN, "iflt");
+        comparisonOperators.put(Token.Type.LESS_THAN_OR_EQUALS, "ifle");
     }
 
     public static String methodDeclarationHeader( String signature ) {
@@ -54,7 +64,7 @@ public class CodeBuilder {
                 + CODE_INDENT + ".limit locals         " + limitLocals + "\n";
     }
 
-    public static String storeStackToVariable( Compiler.ValueType type, int index, String name ) throws CompilationErrorException {
+    public static String storeStackToVariable( ProgramCompiler.ValueType type, int index, String name ) throws CompilationErrorException {
         StringBuilder result = new StringBuilder();
 
         String typeSymbol = typeSymbols.get(type);
@@ -75,11 +85,11 @@ public class CodeBuilder {
         return result.toString();
     }
 
-    public static String storeStackToVariable( Compiler.Variable variable ) throws CompilationErrorException {
+    public static String storeStackToVariable( ProgramCompiler.Variable variable ) throws CompilationErrorException {
         return storeStackToVariable( variable.getType(), variable.getIndex(), variable.getName() );
     }
 
-    public static String loadVariableToStack( Compiler.ValueType type, int index, String name ) throws CompilationErrorException {
+    public static String loadVariableToStack( ProgramCompiler.ValueType type, int index, String name ) throws CompilationErrorException {
         StringBuilder result = new StringBuilder();
 
         String typeSymbol = typeSymbols.get(type);
@@ -100,11 +110,11 @@ public class CodeBuilder {
         return result.toString();
     }
 
-    public static String loadVariableToStack( Compiler.Variable variable ) throws CompilationErrorException {
+    public static String loadVariableToStack( ProgramCompiler.Variable variable ) throws CompilationErrorException {
         return loadVariableToStack(variable.getType(), variable.getIndex(), variable.getName());
     }
 
-    public static String loadValueToStack( Compiler.ValueType type, String value) throws CompilationErrorException {
+    public static String loadValueToStack( ProgramCompiler.ValueType type, String value) throws CompilationErrorException {
         StringBuilder result = new StringBuilder();
         switch (type) {
             case I:
@@ -124,15 +134,43 @@ public class CodeBuilder {
         return result.toString();
     }
 
-    public static String operationOnStack(Compiler.ValueType type, StackOperation operation) {
+    public static String operationOnStack(ProgramCompiler.ValueType type, StackOperation operation) {
         return CODE_INDENT + typeSymbols.get(type) + operationCodes.get(operation) + '\n';
     }
 
-    public static String cast(Compiler.ValueType from, Compiler.ValueType to) {
+    public static String cast(ProgramCompiler.ValueType from, ProgramCompiler.ValueType to) {
         return CODE_INDENT + typeSymbols.get(from) + "2" + typeSymbols.get(to) + '\n';
     }
 
-    public static String returnOperation(Compiler.ValueType type) {
+    public static String returnOperation(ProgramCompiler.ValueType type) {
         return CODE_INDENT + typeSymbols.get(type) + "return" + '\n';
+    }
+
+    public static String getComparisonOperator(Token.Type type) {
+        if (comparisonOperators.containsKey(type)) {
+            return CODE_INDENT + comparisonOperators.get(type);
+        }
+
+        return CODE_INDENT + type.toString();
+    }
+
+    public static String getGoto(String label) {
+        return CODE_INDENT + "goto " + label;
+    }
+
+    public static String startIf(int index) {
+        return index + "_start_if";
+    }
+
+    public static String endIf(int index) {
+        return index + "_end_if";
+    }
+
+    public static String startElseIf(int index, int number) {
+        return index + "_start_else_if_" + number;
+    }
+
+    public static String endElseIf(int index, int number) {
+        return index + "_end_else_if_" + number;
     }
 }

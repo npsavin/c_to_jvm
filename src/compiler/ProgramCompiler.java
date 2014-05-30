@@ -1,6 +1,10 @@
 package compiler;
 
 import parser.nodes.*;
+import parser.nodes.conditional.ConditionalConstructionNode;
+import parser.nodes.conditional.ElseBlockNode;
+import parser.nodes.conditional.ElseIfBlockNode;
+import parser.nodes.conditional.IfBlockNode;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -11,7 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class Compiler {
+public class ProgramCompiler {
     private static final String OUT_FILE_PATH = "./jasminOut/MainJasmin.j";
 
     private Map<ValueNode.ValueType, ValueType> typeMap = new HashMap<>();
@@ -22,11 +26,13 @@ public class Compiler {
     private int stackDepth = 0;
     private int maxStackDepth = 0;
 
+    private int labelIndex = 0;
+
     private MethodNode currentMethod;
 
     private ValueType typeOnStack;
 
-    public Compiler() {
+    public ProgramCompiler() {
         typeMap.put(ValueNode.ValueType.INTEGER_VALUE, ValueType.I);
         typeMap.put(ValueNode.ValueType.DOUBLE_VALUE, ValueType.D);
         typeMap.put(ValueNode.ValueType.VOID_VALUE, ValueType.V);
@@ -93,10 +99,8 @@ public class Compiler {
             declareVariable(variable.getVariableName(), typeMap.get(variable.getVariableType()));
         }
 
-        // compile method commands
-        for (Node command : methodNode.getBody().getChildren()) {
-            builder.append(compileCommand(command));
-        }
+        // compile method body
+        builder.append(compileBody(methodNode.getBody()));
 
         // write return for void result type
         if (methodNode.getResultType() == ValueNode.ValueType.VOID_VALUE) {
@@ -154,6 +158,10 @@ public class Compiler {
                 builder.append(compileMethodCall((MethodCallNode) command));
                 break;
 
+            case CONDITIONAL_CONSTRUCTION:
+                builder.append(compileConditionalConstruction((ConditionalConstructionNode) command));
+                break;
+
             default:
                 builder.append(CodeBuilder.CODE_INDENT)
                         .append("UNEXPECTED NODE\n");
@@ -161,6 +169,106 @@ public class Compiler {
         }
 
         return builder.toString();
+    }
+
+    private String compileConditionalConstruction(ConditionalConstructionNode conditionalConstruction) throws CompilationErrorException {
+        StringBuilder result = new StringBuilder();
+
+        int localLabelIndex = labelIndex++;
+
+        result.append(compileIfBlock(conditionalConstruction.getIfBlockNode(), localLabelIndex));
+
+        if (conditionalConstruction.hasElseIfBlocks()) {
+            int number = 0;
+            for (ElseIfBlockNode elseIfBlockNode : conditionalConstruction.getElseIfBlockNodes()) {
+                result.append(compileElseIfBlock(elseIfBlockNode, localLabelIndex, number++));
+            }
+        }
+
+        if (conditionalConstruction.hasElseBlock()) {
+            result.append(compileElseBlock(conditionalConstruction.getElseBlockNode(), localLabelIndex));
+        }
+
+        return result.toString();
+    }
+
+    private String compileIfBlock(IfBlockNode ifBlockNode, int localLabelIndex) throws CompilationErrorException {
+        StringBuilder result = new StringBuilder();
+
+        Node condition = ifBlockNode.getCondition();
+
+        // condition
+        String startLabel = CodeBuilder.startIf(localLabelIndex);
+        String endLabel = CodeBuilder.endIf(localLabelIndex);
+
+        result.append(CodeBuilder.getComparisonOperator(condition.getValueToken().getType()))
+                .append(" ").append(startLabel)
+                .append('\n');
+
+        // goto
+        result.append(CodeBuilder.getGoto(endLabel)).append('\n');
+
+        // start label
+        result.append(startLabel).append(":\n");
+
+        // body
+        result.append(compileBody(ifBlockNode.getBody()));
+
+        // end label
+        result.append(endLabel).append(":\n\n");
+
+        return result.toString();
+    }
+
+    private String compileElseIfBlock(
+            ElseIfBlockNode elseIfBlockNode,
+            int localLabelIndex,
+            int elseIfNumber) throws CompilationErrorException {
+        StringBuilder result = new StringBuilder();
+
+        Node condition = elseIfBlockNode.getCondition();
+
+        String startLabel = CodeBuilder.startElseIf(localLabelIndex, elseIfNumber);
+        String endLabel = CodeBuilder.endElseIf(localLabelIndex, elseIfNumber);
+
+        // condition
+        result.append(CodeBuilder.getComparisonOperator(condition.getValueToken().getType()))
+                .append(" ").append(startLabel)
+                .append('\n');
+
+        // goto
+        result.append(CodeBuilder.getGoto(endLabel)).append('\n');
+
+        // start label
+        result.append(startLabel).append(":\n");
+
+        // body
+        result.append(compileBody(elseIfBlockNode.getBody()));
+
+        // end label
+        result.append(endLabel).append(":\n\n");
+
+        return result.toString();
+    }
+
+    private String compileElseBlock(ElseBlockNode elseBlockNode, int localLabelIndex) throws CompilationErrorException {
+        StringBuilder result = new StringBuilder();
+
+        // body
+        result.append(compileBody(elseBlockNode.getBody()));
+
+        return result.toString();
+    }
+
+
+    private String compileBody(BodyNode body) throws CompilationErrorException {
+        StringBuilder result = new StringBuilder();
+
+        for (Node command : body.getChildren()) {
+            result.append(compileCommand(command));
+        }
+
+        return result.toString();
     }
 
     private String compileReturn(Node command) throws CompilationErrorException {
