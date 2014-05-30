@@ -1,6 +1,14 @@
+import buffer.Buffer;
+import buffer.BufferInterface;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import parser.nodes.Node;
+import parser.Parser;
+import parser.ParsingErrorException;
+import tokenizer.Token;
+import tokenizer.Tokenizer;
+import tokenizer.TokenizerInterface;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -36,13 +44,69 @@ public class ParserTest {
     }
 
     @Test
-    public void testParse() throws Exception {
+    public void testParseProgram() throws Exception {
+
+    }
+
+    @Test
+    public void testParseMethod() throws Exception {
+
+    }
+
+    @Test
+    public void testParseType() throws Exception {
+
+    }
+
+    @Test
+    public void testParseName() throws Exception {
+
+    }
+
+    @Test
+    public void testParseVarList() throws Exception {
+
+    }
+
+    @Test
+    public void testParseNotEmptyVarList() throws Exception {
+
+    }
+
+    @Test
+    public void testParseBody() throws Exception {
+
+    }
+    @Test
+    public void testParseCommand() throws Exception {
+
+    }
+
+    @Test
+    public void testParseParamList() throws Exception {
+
+    }
+
+    @Test
+    public void testParseNotEmptyParamList() throws Exception {
 
     }
 
     @Test
     public void testParseExpression() throws Exception {
+        createParserFromString("7+54*2");
 
+        Node expected = new Node (
+                new Token(Token.Type.PLUS),
+                new Node (new Token( Token.Type.INTEGER_VALUE, "7" ) ),
+                new Node (
+                        new Token(Token.Type.MULTIPLY),
+                        new Node (new Token( Token.Type.INTEGER_VALUE, "54" ) ),
+                        new Node (new Token( Token.Type.INTEGER_VALUE, "2" ) )
+                )
+        );
+
+        Assert.assertEquals( expected, parser.parseExpression() );
     }
 
     @Test
@@ -107,7 +171,7 @@ public class ParserTest {
 
         createParserFromString("(22+25)");
 
-        expected = new Node (
+        expected = new Node(
                 new Token(Token.Type.PLUS),
                 new Node (new Token( Token.Type.INTEGER_VALUE, "22" ) ),
                 new Node (new Token( Token.Type.INTEGER_VALUE, "25" ) )

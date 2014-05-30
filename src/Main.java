@@ -1,9 +1,8 @@
 import buffer.Buffer;
 import buffer.BufferInterface;
-import compiler.Compiler;
-import parser.nodes.Node;
 import parser.Parser;
 import parser.ParsingErrorException;
+import parser.nodes.Node;
 import tokenizer.Tokenizer;
 import tokenizer.TokenizerInterface;
 
@@ -15,7 +14,7 @@ public class Main {
     public static void main( String[] args ) {
         BufferInterface buffer = null;
         try {
-            buffer = new Buffer( new FileReader( new File( "./resources/debugProgram.c" ) ), 10 );
+            buffer = new Buffer( new FileReader( new File( "./resources/testIfProgram.c" ) ), 10 );
         } catch ( FileNotFoundException e ) {
             e.printStackTrace();
         }
@@ -30,8 +29,8 @@ public class Main {
             String resultString = result.toTreeString( 0 );
             System.out.println(resultString);
 
-            compiler.Compiler compiler = new Compiler();
-            compiler.compileProgram( result );
+            //compiler.Compiler compiler = new Compiler();
+            //compiler.compileProgram( result );
         } catch ( ParsingErrorException e ) {
             System.err.println( e.getMessage() );
             e.printStackTrace();

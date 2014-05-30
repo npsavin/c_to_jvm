@@ -17,18 +17,25 @@ double doubleIntSum(int a, double b) {
 }
 
 double powerTen(double num) {
-    int power = 10;
+    int power;
+    power = 10;
 
     num = num*power;
 
-    return 1;
+    return num;
 }
 
 void main() {
     print pi();
     printSomeNumbers();
-    print intSum(3,intSum(2,-10));
+    print intSum(3,intSum(2,-10.2));
     print doubleIntSum(intSum(2,-10),doubleIntSum(1553, -23.54));
     print powerTen(1345.22);
+
+    int a;
+
+    a = 7.8;
+
+    print a;
 }
 

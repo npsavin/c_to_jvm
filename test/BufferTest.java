@@ -1,5 +1,7 @@
 import java.io.Reader;
 import java.io.StringReader;
+
+import buffer.Buffer;
 import org.junit.*;
 
 public class BufferTest {

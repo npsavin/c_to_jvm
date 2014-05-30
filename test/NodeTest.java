@@ -1,5 +1,7 @@
 import org.junit.Assert;
 import org.junit.Test;
+import parser.nodes.Node;
+import tokenizer.Token;
 
 public class NodeTest {
     @Test
@@ -11,9 +13,9 @@ public class NodeTest {
                 );
 
         Assert.assertEquals(
-                "Token{type=INTEGER_VALUE, value='2'}\n" +
-                "Token{type=PLUS, value='null'}\n" +
-                "Token{type=INTEGER_VALUE, value='23'}\n",
+                "tokenizer.Token{nodeType=INTEGER_VALUE, valueToken='2'}\n" +
+                "tokenizer.Token{nodeType=PLUS, valueToken='null'}\n" +
+                "tokenizer.Token{nodeType=INTEGER_VALUE, valueToken='23'}\n",
                 node.toString() );
     }
 }

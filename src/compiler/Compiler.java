@@ -93,13 +93,6 @@ public class Compiler {
             declareVariable(variable.getVariableName(), typeMap.get(variable.getVariableType()));
         }
 
-        // move arguments from stack to variables
-//        for (int i = variables.size() - 1; i >= 0; i--) {
-//            VariableNode var = (VariableNode) variables.get(i);
-//
-//            builder.append(loadVariableToStack(var.getVariableName()));
-//        }
-
         // compile method commands
         for (Node command : methodNode.getBody().getChildren()) {
             builder.append(compileCommand(command));
@@ -240,7 +233,7 @@ public class Compiler {
     private String compileExpression(Node expression) throws CompilationErrorException {
         StringBuilder builder = new StringBuilder();
 
-        if (expression.getNodeType() != Node.NodeType.EXPRESSION) {
+        if (expression.getNodeType() != NodeType.EXPRESSION) {
             builder.append(compileTerm(expression));
         } else {
             builder.append(compileTerm(expression.getChild(0)));
@@ -273,7 +266,7 @@ public class Compiler {
     private String compileTerm(Node term) throws CompilationErrorException {
         StringBuilder builder = new StringBuilder();
 
-        if (term.getNodeType() != Node.NodeType.TERM) {
+        if (term.getNodeType() != NodeType.TERM) {
             builder.append(compileFactor(term));
         } else {
             builder.append(compileFactor(term.getChild(0)));
@@ -304,7 +297,7 @@ public class Compiler {
     private String compileFactor(Node factor) throws CompilationErrorException {
         StringBuilder builder = new StringBuilder();
 
-        if (factor.getNodeType() != Node.NodeType.FACTOR) {
+        if (factor.getNodeType() != NodeType.FACTOR) {
             builder.append(compilePower(factor));
         } else {
             builder.append(compilePower(factor.getChild(0)));
@@ -357,7 +350,7 @@ public class Compiler {
     private String compilePower(Node power) throws CompilationErrorException {
         StringBuilder builder = new StringBuilder();
 
-        if (power.getNodeType() == Node.NodeType.UNARY_OPERATION) {
+        if (power.getNodeType() == NodeType.UNARY_OPERATION) {
             Node atom = ((UnaryOperationNode) power).getOperand();
             builder.append(compileAtom(atom));
 

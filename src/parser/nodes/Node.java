@@ -7,36 +7,12 @@ import java.util.List;
 import java.util.Stack;
 
 public class Node {
-    public enum NodeType {
-        VALUE,
-        INT_VALUE,
-        DOUBLE_VALUE,
-        OPERATION,
-        LIST,
-        BODY,
-        PROGRAM,
-        ASSIGNED,
-        METHOD_CALL,
-        RETURN,
-        PRINT,
-        DECLARE,
-        TERM,
-        FACTOR,
-        POWER,
-        EXPRESSION,
-        ATOM,
-        VARIABLE_GET,
-        UNARY_OPERATION
-    }
 
     protected List<Node> children = new ArrayList<>();
-    protected Node parent = null;
 
     protected NodeType nodeType = NodeType.VALUE;
 
     protected Token valueToken = null;
-
-    private int childIndex = 0;
 
     public Node() {
     }
@@ -60,16 +36,6 @@ public class Node {
         children.add( child );
     }
 
-    public Node nextChild() {
-        if ( childIndex >= children.size() ) {
-            return null;
-        }
-
-        childIndex++;
-
-        return children.get( childIndex );
-    }
-
     public Node getChild( int index ) {
         if ( index >= children.size() ) {
             return null;
@@ -84,14 +50,6 @@ public class Node {
 
     private Node right() {
         return getChild( 1 );
-    }
-
-    public Node getParent() {
-        return parent;
-    }
-
-    public void setParent( Node parent ) {
-        this.parent = parent;
     }
 
     public Token getValueToken() {
@@ -143,7 +101,7 @@ public class Node {
         StringBuilder result = new StringBuilder();
 
         for ( int i = 0; i < length; i++ ) {
-            result.append( "\t" );
+            result.append( "| " );
         }
 
         return result.toString();

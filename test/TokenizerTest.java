@@ -1,15 +1,20 @@
+import buffer.Buffer;
+import buffer.BufferInterface;
 import org.junit.Assert;
 import org.junit.Test;
+import tokenizer.IllegalCharacterException;
+import tokenizer.Token;
+import tokenizer.Tokenizer;
+import tokenizer.TokenizerInterface;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.StringReader;
 
 public class TokenizerTest {
     @Test
     public void testGetToken() throws Exception {
-        //BufferInterface buffer = new Buffer( new StringReader( "int a = 775; /*comment\n \n * ** 31e1\n 127 == */ \n double basket = 9798.1; return;" ), 10 );
+        //buffer.BufferInterface buffer = new buffer.Buffer( new StringReader( "int a = 775; /*comment\n \n * ** 31e1\n 127 == */ \n double basket = 9798.1; return;" ), 10 );
 
         BufferInterface buffer = null;
         try {

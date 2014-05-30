@@ -1,6 +1,10 @@
 package parser;
 
 import parser.nodes.*;
+import parser.nodes.conditional.ConditionalConstructionNode;
+import parser.nodes.conditional.ElseBlockNode;
+import parser.nodes.conditional.ElseIfBlockNode;
+import parser.nodes.conditional.IfBlockNode;
 import tokenizer.IllegalCharacterException;
 import tokenizer.Token;
 import tokenizer.TokenizerInterface;
@@ -10,7 +14,7 @@ public class Parser implements ParserInterface {
 
     private Token currentToken;
 
-    public Parser( TokenizerInterface tokenizer ) throws ParsingErrorException {
+    public Parser(TokenizerInterface tokenizer) throws ParsingErrorException {
         this.tokenizer = tokenizer;
         getToken();
     }
@@ -18,8 +22,8 @@ public class Parser implements ParserInterface {
     public void getToken() throws ParsingErrorException {
         try {
             currentToken = tokenizer.getToken();
-        } catch ( IllegalCharacterException e ) {
-            throw new ParsingErrorException("Illegal character!");
+        } catch (IllegalCharacterException e) {
+            throw new ParsingErrorException("Illegal character: " + e.getMessage());
         }
     }
 
@@ -30,16 +34,16 @@ public class Parser implements ParserInterface {
     // program > method program | method
     @Override
     public Node parseProgram() throws ParsingErrorException {
-        System.out.println( "parser.Parser.parseProgram " + currentToken );
+        System.out.println("parser.Parser.parseProgram " + currentToken);
 
-        Node list = new Node( Node.NodeType.PROGRAM );
+        Node list = new Node(NodeType.PROGRAM);
 
-        list.addChild( parseMethod() );
+        list.addChild(parseMethod());
 
-        while ( !currentToken.hasType( Token.Type.END_OF_PROGRAM ) ) {
+        while (!currentToken.hasType(Token.Type.END_OF_PROGRAM)) {
             try {
-                list.addChild( parseMethod() );
-            } catch ( ParsingErrorException e ) {
+                list.addChild(parseMethod());
+            } catch (ParsingErrorException e) {
                 return list;
             }
         }
@@ -50,53 +54,45 @@ public class Parser implements ParserInterface {
     // method > nodeType name (varList) {body}
     @Override
     public Node parseMethod() throws ParsingErrorException {
-        System.out.println( "parser.Parser.parseMethod " + currentToken );
+        System.out.println("parser.Parser.parseMethod " + currentToken);
 
         TypeNode type = (TypeNode) parseType();
 
         Node name = parseName();
 
-        if ( !currentToken.hasType( Token.Type.OPEN_BRACKET ) )
-            throw new ParsingErrorException( "Open bracket '(' expected instead of " + currentToken.toString() );
-
-        getToken();
+        checkAndPassCurrentToken(Token.Type.OPEN_BRACKET);
 
         Node varList = parseVarList();
 
-        if ( !currentToken.hasType( Token.Type.CLOSE_BRACKET ) )
-            throw new ParsingErrorException( "Close bracket ')' expected instead of " + currentToken.toString() );
+        checkAndPassCurrentToken(Token.Type.CLOSE_BRACKET);
 
-        getToken();
-
-        if ( !currentToken.hasType( Token.Type.OPEN_BRACE ) )
-            throw new ParsingErrorException( "Open brace '{' expected instead of " + currentToken.toString() );
-
-        getToken();
+        checkAndPassCurrentToken(Token.Type.OPEN_BRACE);
 
         Node body = parseBody();
 
-        if ( !currentToken.hasType( Token.Type.CLOSE_BRACE ) )
-            throw new ParsingErrorException( "Close brace '}' expected instead of " + currentToken.toString() );
-
-        getToken();
+        checkAndPassCurrentToken(Token.Type.CLOSE_BRACE);
 
         return new MethodNode(type, name.getValueToken(), varList, body);
+    }
+
+    private void checkAndPassCurrentToken(Token.Type type) throws ParsingErrorException {
+        if (!currentToken.hasType(type)) {
+            throw new ParsingErrorException(type.toString() + " expected instead of " + currentToken.toString());
+        }
+
+        getToken();
     }
 
     // type > "double" | "int" | "void"
     @Override
     public Node parseType() throws ParsingErrorException {
-        System.out.println( "parser.Parser.parseType " + currentToken );
+        System.out.println("parser.Parser.parseType " + currentToken);
 
-        if ( !(
-                currentToken.hasType( Token.Type.DOUBLE_TYPE ) ||
-                currentToken.hasType( Token.Type.INTEGER_TYPE ) ||
-                currentToken.hasType( Token.Type.VOID_TYPE )
-        ) ) {
-            throw new ParsingErrorException( "Type (integer, double or void) expected instead of " + currentToken.toString() );
+        if (!isTypeIdentifier(currentToken)) {
+            throw new ParsingErrorException("Type (integer, double or void) expected instead of " + currentToken.toString());
         }
 
-        Node result = new TypeNode( currentToken );
+        Node result = new TypeNode(currentToken);
         getToken();
 
         return result;
@@ -104,10 +100,10 @@ public class Parser implements ParserInterface {
 
     @Override
     public Node parseName() throws ParsingErrorException {
-        System.out.println( "parser.Parser.parseName " + currentToken );
+        System.out.println("parser.Parser.parseName " + currentToken);
 
-        if ( !currentToken.hasType( Token.Type.IDENTIFIER ) )
-            throw new ParsingErrorException( "Identifier expected instead of " + currentToken.toString() );
+        if (!currentToken.hasType(Token.Type.IDENTIFIER))
+            throw new ParsingErrorException("Identifier expected instead of " + currentToken.toString());
 
         Node result = new Node(currentToken);
         getToken();
@@ -118,15 +114,15 @@ public class Parser implements ParserInterface {
     // varList > notEmptyVarList | EMPTY
     @Override
     public Node parseVarList() throws ParsingErrorException {
-        System.out.println( "parser.Parser.parseVarList " + currentToken );
+        System.out.println("parser.Parser.parseVarList " + currentToken);
 
         Node vars;
 
         try {
             vars = parseNotEmptyVarList();
-        } catch ( ParsingErrorException e ) {
+        } catch (ParsingErrorException e) {
             //System.out.println( "Empty var list" );
-            return new Node( Node.NodeType.LIST );
+            return new Node(NodeType.LIST);
         }
 
         return vars;
@@ -135,17 +131,17 @@ public class Parser implements ParserInterface {
     // notEmptyVarList > nodeType name | nodeType name, notEmptyVarList
     @Override
     public Node parseNotEmptyVarList() throws ParsingErrorException {
-        System.out.println( "parser.Parser.parseNotEmptyVarList " + currentToken );
-        Node list = new Node( Node.NodeType.LIST );
+        System.out.println("parser.Parser.parseNotEmptyVarList " + currentToken);
+        Node list = new Node(NodeType.LIST);
 
         TypeNode type = (TypeNode) parseType();
         Node name = parseName();
 
         VariableNode variable = new VariableNode(type.getValueType(), name.getValueToken().getValue());
 
-        list.addChild( variable );
+        list.addChild(variable);
 
-        while (currentToken.hasType( Token.Type.COMMA )) {
+        while (currentToken.hasType(Token.Type.COMMA)) {
             getToken();
 
             type = (TypeNode) parseType();
@@ -153,7 +149,7 @@ public class Parser implements ParserInterface {
 
             variable = new VariableNode(type.getValueType(), name.getValueToken().getValue());
 
-            list.addChild( variable );
+            list.addChild(variable);
         }
 
         return list;
@@ -161,33 +157,32 @@ public class Parser implements ParserInterface {
 
     // body > command; | command; body
     @Override
-    public Node parseBody() throws ParsingErrorException {
-        System.out.println( "parser.Parser.parseBody " + currentToken );
+    public BodyNode parseBody() throws ParsingErrorException {
+        System.out.println("parser.Parser.parseBody " + currentToken);
 
-        Node list = new Node( Node.NodeType.LIST );
-        list.setNodeType(Node.NodeType.BODY);
+        BodyNode body = new BodyNode();
 
-        list.addChild( parseCommand() );
+        body.addChild(parseCommand());
 
-        while (currentToken.hasType( Token.Type.SEMICOLON )) {
+        while (currentToken.hasType(Token.Type.SEMICOLON)) {
             getToken();
 
             try {
-                list.addChild( parseCommand() );
-            } catch ( ParsingErrorException e ) {
-                return list;
+                body.addChild(parseCommand());
+            } catch (ParsingErrorException e) {
+                return body;
             }
         }
 
-        return list;
+        return body;
     }
 
     // command > name = expr | RETURN expr | nodeType name | name(paramList)
     @Override
     public Node parseCommand() throws ParsingErrorException {
-        System.out.println( "parser.Parser.parseCommand " + currentToken );
+        System.out.println("parser.Parser.parseCommand " + currentToken);
 
-        switch ( currentToken.getType() ) {
+        switch (currentToken.getType()) {
             case IDENTIFIER: {
                 Node name = parseName();
 
@@ -216,7 +211,7 @@ public class Parser implements ParserInterface {
                     assignOperator.addChild(parseExpression());
 
                     variableNode.addChild(assignOperator);
-                    variableNode.setNodeType(Node.NodeType.ASSIGNED);
+                    variableNode.setNodeType(NodeType.ASSIGNED);
 
                     return variableNode;
                 }
@@ -230,7 +225,7 @@ public class Parser implements ParserInterface {
                 getToken();
 
                 returnOperator.addChild(parseExpression());
-                returnOperator.setNodeType(Node.NodeType.RETURN);
+                returnOperator.setNodeType(NodeType.RETURN);
 
                 return returnOperator;
             }
@@ -241,9 +236,13 @@ public class Parser implements ParserInterface {
                 getToken();
 
                 printOperator.addChild(parseExpression());
-                printOperator.setNodeType(Node.NodeType.PRINT);
+                printOperator.setNodeType(NodeType.PRINT);
 
                 return printOperator;
+            }
+
+            case IF: {
+                return parseConditionalConstruction();
             }
 
             case INTEGER_TYPE:
@@ -255,14 +254,85 @@ public class Parser implements ParserInterface {
 
                 VariableNode variable = new VariableNode(type.getValueType(), name.getValueToken().getValue());
 
-                type.addChild( variable );
-                type.setNodeType(Node.NodeType.DECLARE);
+                type.addChild(variable);
+                type.setNodeType(NodeType.DECLARE);
 
                 return type;
             default:
                 throw new ParsingErrorException("Unexpected token while parsing Command: " + currentToken);
         }
     }
+
+    public ConditionalConstructionNode parseConditionalConstruction() throws ParsingErrorException {
+        ConditionalConstructionNode conditionalConstructionNode = new ConditionalConstructionNode();
+
+        conditionalConstructionNode.setIfBlockNode(parseIfBlock());
+
+        while (currentToken.hasType(Token.Type.ELSEIF)) {
+            conditionalConstructionNode.addElseIfBlock(parseElseIfBlock());
+        }
+
+        if (currentToken.hasType(Token.Type.ELSE)) {
+            conditionalConstructionNode.setElseBlockNode(parseElseBlock());
+        }
+
+        return conditionalConstructionNode;
+    }
+
+    public IfBlockNode parseIfBlock() throws ParsingErrorException {
+        IfBlockNode ifBlockNode = new IfBlockNode();
+
+        getToken();
+
+        checkAndPassCurrentToken(Token.Type.OPEN_BRACKET);
+
+        ifBlockNode.setCondition(parseExpression());
+
+        checkAndPassCurrentToken(Token.Type.CLOSE_BRACKET);
+
+        checkAndPassCurrentToken(Token.Type.OPEN_BRACE);
+
+        ifBlockNode.setBody(parseBody());
+
+        checkAndPassCurrentToken(Token.Type.CLOSE_BRACE);
+
+        return ifBlockNode;
+    }
+
+    public ElseIfBlockNode parseElseIfBlock() throws ParsingErrorException {
+        ElseIfBlockNode elseIfBlockNode = new ElseIfBlockNode();
+
+        getToken();
+
+        checkAndPassCurrentToken(Token.Type.OPEN_BRACKET);
+
+        elseIfBlockNode.setCondition(parseExpression());
+
+        checkAndPassCurrentToken(Token.Type.CLOSE_BRACKET);
+
+        checkAndPassCurrentToken(Token.Type.OPEN_BRACE);
+
+        elseIfBlockNode.setBody(parseBody());
+
+        checkAndPassCurrentToken(Token.Type.CLOSE_BRACE);
+
+        return elseIfBlockNode;
+    }
+
+    public ElseBlockNode parseElseBlock() throws ParsingErrorException {
+        ElseBlockNode elseBlockNode = new ElseBlockNode();
+
+        getToken();
+
+        checkAndPassCurrentToken(Token.Type.OPEN_BRACE);
+
+        elseBlockNode.setBody(parseBody());
+
+        checkAndPassCurrentToken(Token.Type.CLOSE_BRACE);
+
+        return elseBlockNode;
+    }
+
 
     //paramList > notEmptyParamList | EMPTY
     @Override
@@ -271,8 +341,8 @@ public class Parser implements ParserInterface {
 
         try {
             params = parseNotEmptyParamList();
-        } catch ( ParsingErrorException e ) {
-            return new Node( Node.NodeType.LIST );
+        } catch (ParsingErrorException e) {
+            return new Node(NodeType.LIST);
         }
 
         return params;
@@ -281,15 +351,15 @@ public class Parser implements ParserInterface {
     //notEmptyParamList > expr | expr, notEmptyParamList
     @Override
     public Node parseNotEmptyParamList() throws ParsingErrorException {
-        Node list = new Node( Node.NodeType.LIST );
-        list.addChild( parseExpression() );
+        Node list = new Node(NodeType.LIST);
+        list.addChild(parseExpression());
 
-        while (currentToken.hasType( Token.Type.COMMA )) {
+        while (currentToken.hasType(Token.Type.COMMA)) {
             getToken();
 
             try {
-                list.addChild( parseExpression() );
-            } catch ( ParsingErrorException e ) {
+                list.addChild(parseExpression());
+            } catch (ParsingErrorException e) {
                 return list;
             }
         }
@@ -301,19 +371,15 @@ public class Parser implements ParserInterface {
     public Node parseExpression() throws ParsingErrorException {
         Node root = parseTerm();
 
-        if ( !currentToken.hasType( Token.Type.PLUS ) && !currentToken.hasType( Token.Type.MINUS ) ) {
-            return root;
-        }
-
-        while ( currentToken.hasType( Token.Type.PLUS ) || currentToken.hasType( Token.Type.MINUS ) ) {
+        while (isExpressionOperation(currentToken)) {
             Node left = root;
 
             Token operation = currentToken;
 
             getToken();
 
-            root = new Node( operation, left, parseTerm() );
-            root.setNodeType(Node.NodeType.EXPRESSION);
+            root = new Node(operation, left, parseTerm());
+            root.setNodeType(NodeType.EXPRESSION);
         }
 
         return root;
@@ -323,19 +389,15 @@ public class Parser implements ParserInterface {
     public Node parseTerm() throws ParsingErrorException {
         Node root = parseFactor();
 
-        if ( !currentToken.hasType( Token.Type.MULTIPLY ) && !currentToken.hasType( Token.Type.DIVIDE ) ) {
-            return root;
-        }
-
-        while ( currentToken.hasType( Token.Type.MULTIPLY ) || currentToken.hasType( Token.Type.DIVIDE )  ) {
+        while (isTermOperation(currentToken)) {
             Node left = root;
 
             Token operation = currentToken;
 
             getToken();
 
-            root = new Node( operation, left, parseFactor() );
-            root.setNodeType(Node.NodeType.TERM);
+            root = new Node(operation, left, parseFactor());
+            root.setNodeType(NodeType.TERM);
         }
 
         return root;
@@ -345,13 +407,13 @@ public class Parser implements ParserInterface {
     public Node parseFactor() throws ParsingErrorException {
         Node first = parsePower();
 
-        if ( currentToken.hasType( Token.Type.POWER ) ) {
+        if (currentToken.hasType(Token.Type.POWER)) {
             Token operation = currentToken;
 
             getToken();
 
-            Node power = new Node( operation, first, parseFactor() );
-            power.setNodeType(Node.NodeType.FACTOR);
+            Node power = new Node(operation, first, parseFactor());
+            power.setNodeType(NodeType.FACTOR);
 
             return power;
         }
@@ -361,7 +423,7 @@ public class Parser implements ParserInterface {
 
     @Override
     public Node parsePower() throws ParsingErrorException {
-        if ( currentToken.hasType( Token.Type.MINUS ) ) {
+        if (currentToken.hasType(Token.Type.MINUS) || currentToken.hasType(Token.Type.NEGATION)) {
             // pass minus
             getToken();
 
@@ -375,43 +437,38 @@ public class Parser implements ParserInterface {
 
     @Override
     public Node parseAtom() throws ParsingErrorException {
-        switch ( currentToken.getType() ) {
-            case IDENTIFIER :
+        switch (currentToken.getType()) {
+            case IDENTIFIER:
                 Node identifier = new Node(currentToken);
 
                 getToken();
 
-                if (currentToken.hasType( Token.Type.OPEN_BRACKET )) {
+                if (currentToken.hasType(Token.Type.OPEN_BRACKET)) {
                     getToken();
 
                     Node paramList = parseParamList();
 
-                    MethodCallNode methodCallNode = new MethodCallNode( identifier.getValueToken(), paramList );
+                    MethodCallNode methodCallNode = new MethodCallNode(identifier.getValueToken(), paramList);
 
                     System.err.println(methodCallNode.toTreeString(0));
 
-                    if ( currentToken.hasType( Token.Type.CLOSE_BRACKET ) ) {
-                        getToken();
-                    } else {
-                        throw new ParsingErrorException(
-                                "Expected close bracket ')' at the end of arguments list, but found " + currentToken );
-                    }
+                    checkAndPassCurrentToken(Token.Type.CLOSE_BRACKET);
 
                     return methodCallNode;
                 } else {
                     VariableNode variableNode = new VariableNode(identifier.getValueToken().getValue());
-                    variableNode.setNodeType(Node.NodeType.VARIABLE_GET);
+                    variableNode.setNodeType(NodeType.VARIABLE_GET);
                     return variableNode;
                 }
 
-            case INTEGER_VALUE : {
+            case INTEGER_VALUE: {
                 ValueNode valueNode = new ValueNode(currentToken);
                 valueNode.setValueType(ValueNode.ValueType.INTEGER_VALUE);
                 getToken();
                 return valueNode;
             }
 
-            case DOUBLE_VALUE : {
+            case DOUBLE_VALUE: {
                 ValueNode valueNode = new ValueNode(currentToken);
                 valueNode.setValueType(ValueNode.ValueType.DOUBLE_VALUE);
                 getToken();
@@ -421,20 +478,61 @@ public class Parser implements ParserInterface {
             case MINUS:
                 return parseExpression();
 
-            case OPEN_BRACKET :
+            case OPEN_BRACKET:
                 getToken();
+
                 Node expression = parseExpression();
-                if (currentToken.hasType( Token.Type.CLOSE_BRACKET )) {
+
+                checkAndPassCurrentToken(Token.Type.CLOSE_BRACKET);
+
+                if ( isTokenComparisonOperator(currentToken) ) {
+                    Token operation = currentToken;
+
+                    System.out.println(operation);
+
                     getToken();
-                } else {
-                    // incorrect token, should be closing bracket
-                    throw new ParsingErrorException(
-                            "Close bracket ')' expected instead of " + currentToken );
+
+                    checkAndPassCurrentToken(Token.Type.OPEN_BRACKET);
+
+                    Node right = parseExpression();
+
+                    checkAndPassCurrentToken(Token.Type.CLOSE_BRACKET);
+
+                    Node result = new Node(operation, expression, right);
+                    result.setNodeType(NodeType.EXPRESSION);
+
+                    return result;
                 }
 
                 return expression;
         }
 
         throw new ParsingErrorException("Cannot parse atom: unexpected token " + currentToken);
+    }
+
+    private boolean isTokenComparisonOperator(Token token) {
+        return token.hasType(Token.Type.EQUALS)
+                || token.hasType(Token.Type.GREATER_THAN)
+                || token.hasType(Token.Type.GREATER_THAN_OR_EQUALS)
+                || token.hasType(Token.Type.LESS_THAN)
+                || token.hasType(Token.Type.LESS_THAN_OR_EQUALS);
+    }
+
+    private boolean isTermOperation(Token token) {
+        return token.hasType(Token.Type.MULTIPLY)
+                || token.hasType(Token.Type.DIVIDE)
+                || token.hasType(Token.Type.AND);
+    }
+
+    private boolean isExpressionOperation(Token token) {
+        return token.hasType(Token.Type.PLUS)
+                || token.hasType(Token.Type.MINUS)
+                || token.hasType(Token.Type.OR);
+    }
+
+    private boolean isTypeIdentifier(Token token) {
+        return token.hasType(Token.Type.VOID_TYPE)
+                || token.hasType(Token.Type.INTEGER_TYPE)
+                || token.hasType(Token.Type.DOUBLE_TYPE);
     }
 }

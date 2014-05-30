@@ -8,8 +8,17 @@ public class Token {
         DIVIDE,
         POWER,
 
-        ASSIGN,
+        GREATER_THAN,
+        GREATER_THAN_OR_EQUALS,
+        LESS_THAN,
+        LESS_THAN_OR_EQUALS,
         EQUALS,
+
+        NEGATION,
+        AND,
+        OR,
+
+        ASSIGN,
 
         IDENTIFIER,
 
@@ -32,6 +41,10 @@ public class Token {
         RETURN,
         PRINT,
 
+        IF,
+        ELSE,
+        ELSEIF,
+
         END_OF_PROGRAM
     }
 
@@ -39,11 +52,11 @@ public class Token {
 
     private String value;
 
-    public Token( Type type ) {
+    public Token(Type type) {
         this.type = type;
     }
 
-    public Token( Type type, String value ) {
+    public Token(Type type, String value) {
         this.type = type;
         this.value = value;
     }
@@ -56,19 +69,19 @@ public class Token {
         return value;
     }
 
-    public boolean hasType( Type type ) {
-        return this.type.equals( type );
+    public boolean hasType(Type type) {
+        return this.type.equals(type);
     }
 
     @Override
-    public boolean equals( Object o ) {
-        if ( this == o ) return true;
-        if ( o == null || getClass() != o.getClass() ) return false;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
         Token token = (Token) o;
 
-        if ( type != token.type ) return false;
-        if ( value != null ? !value.equals( token.value ) : token.value != null ) return false;
+        if (type != token.type) return false;
+        if (value != null ? !value.equals(token.value) : token.value != null) return false;
 
         return true;
     }
@@ -82,7 +95,7 @@ public class Token {
 
     @Override
     public String toString() {
-        if ( value == null ) {
+        if (value == null) {
             return type.toString();
         }
 
